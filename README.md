@@ -1,8 +1,15 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# eMate - ECSA Registration Tool
 
-## Getting Started
+## Dashboard Image
+The dashboard image you shared in chat needs to be saved to:
+```
+mieng/public/dashboard-image.png
+```
 
-First, run the development server:
+Please save the image you shared to this location for it to appear in the hero section of the landing page.
+
+## Development
+Run the development server:
 
 ```bash
 npm run dev
