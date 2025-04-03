@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 // Types
 import { FormData } from "./types";
@@ -32,9 +33,11 @@ const initialFormData: FormData = {
 
 export default function Signup() {
   const router = useRouter();
+  const { signup, error: authError, clearError } = useAuth();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Calculate progress percentage
   const progressPercentage = ((currentStep - 1) / 4) * 100;
@@ -74,12 +77,16 @@ export default function Signup() {
   // Navigation handlers
   const goToNextStep = () => {
     if (currentStep < 5) {
+      clearError();
+      setError(null);
       setCurrentStep(prev => (prev + 1) as Step);
     }
   };
 
   const goToPreviousStep = () => {
     if (currentStep > 1) {
+      clearError();
+      setError(null);
       setCurrentStep(prev => (prev - 1) as Step);
     }
   };
@@ -87,17 +94,31 @@ export default function Signup() {
   // Form submission handler
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setError(null);
+    
     try {
-      // In a real application, we would send the data to the backend
-      console.log("Form data submitted:", formData);
+      // Extract authentication data and profile data
+      const { email, password, confirmPassword, ...profileData } = formData;
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Validate that passwords match
+      if (password !== confirmPassword) {
+        throw new Error("Passwords do not match");
+      }
       
-      // Redirect to dashboard on successful signup
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Error submitting form:", error);
+      // Call the signup function from auth context
+      await signup(email, password, {
+        name: profileData.name,
+        discipline: profileData.discipline,
+        experience: profileData.experience,
+        hasMentor: profileData.hasMentor,
+        hoursPerWeek: profileData.hoursPerWeek,
+        completionTimeline: profileData.completionTimeline
+      });
+      
+      // If no error occurs, the user will be redirected by the auth context
+    } catch (error: any) {
+      console.error("Error during signup:", error);
+      setError(error.message || "Failed to create account. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -195,29 +216,23 @@ export default function Signup() {
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center py-8">
         <div className="max-w-2xl w-full mx-auto px-4 md:px-6">
-          {/* Progress Bar */}
+          {/* Progress Indicator */}
           <div className="mb-8">
             <div className="flex justify-between mb-2">
-              {[1, 2, 3, 4, 5].map((step) => (
+              {[1, 2, 3, 4, 5].map(step => (
                 <div key={step} className="flex flex-col items-center">
                   <div 
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm 
-                      ${currentStep === step 
-                        ? 'bg-primary text-white' 
-                        : currentStep > step 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-gray-200 text-gray-600'}`}
+                      ${step <= currentStep ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}`}
                   >
-                    {currentStep > step ? (
+                    {step < currentStep ? (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                    ) : (
-                      step
-                    )}
+                    ) : step}
                   </div>
                   <span className="text-xs mt-1 hidden md:block">
-                    {stepInfo[step as Step].title}
+                    {Object.values(stepInfo)[step - 1].title}
                   </span>
                 </div>
               ))}
@@ -230,19 +245,26 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* Form Card */}
+          {/* Card */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
             {/* Card Header */}
             <div className="px-6 py-4 border-b border-gray-200">
               <h1 className="text-xl font-bold">{stepInfo[currentStep].title}</h1>
               <p className="text-gray-500 text-sm">{stepInfo[currentStep].description}</p>
             </div>
-
+            
             {/* Card Content */}
             <div className="p-6">
+              {/* Display any errors */}
+              {(error || authError) && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                  {error || authError}
+                </div>
+              )}
+              
               {renderStepForm()}
             </div>
-
+            
             {/* Card Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
               <button

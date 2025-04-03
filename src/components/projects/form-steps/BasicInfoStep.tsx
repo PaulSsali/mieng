@@ -39,36 +39,38 @@ const DISCIPLINES = [
 
 export function BasicInfoStep({ formData, updateFormData, isLoading }: BasicInfoStepProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-bold mb-6">Basic Project Information</h2>
-        <p className="text-sm text-muted-foreground mb-6">
+        <h2 className="text-xl font-semibold mb-2">Basic Project Information</h2>
+        <p className="text-sm text-muted-foreground">
           Start by providing essential details about your engineering project.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Project Name</label>
+          <label htmlFor="project-name" className="text-sm font-medium">Project Name</label>
           <Input
+            id="project-name"
             required
             value={formData.name}
             onChange={(e) => updateFormData({ name: e.target.value })}
             placeholder="e.g., Downtown Bridge Renovation"
+            className="w-full"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-1">
             Enter a clear, descriptive name for your project
           </p>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Engineering Discipline</label>
+          <label htmlFor="discipline" className="text-sm font-medium">Engineering Discipline</label>
           <Select
             value={formData.discipline}
             onValueChange={(value) => updateFormData({ discipline: value })}
             disabled={isLoading}
           >
-            <SelectTrigger>
+            <SelectTrigger id="discipline" className="w-full">
               <SelectValue placeholder={isLoading ? "Loading..." : "Select discipline"} />
             </SelectTrigger>
             <SelectContent>
@@ -79,21 +81,22 @@ export function BasicInfoStep({ formData, updateFormData, isLoading }: BasicInfo
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-1">
             {isLoading ? "Loading your profile data..." : "Defaults to your engineering discipline from your profile"}
           </p>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Project Description</label>
+          <label htmlFor="description" className="text-sm font-medium">Project Description</label>
           <Textarea
+            id="description"
             required
             value={formData.description}
             onChange={(e) => updateFormData({ description: e.target.value })}
             placeholder="Briefly describe the project, its objectives, and scope..."
-            className="min-h-[120px]"
+            className="min-h-[150px] w-full resize-y"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-1">
             Provide a concise overview of what the project entails (200-300 words recommended)
           </p>
         </div>

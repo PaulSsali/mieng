@@ -8,6 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useEffect, useState } from "react"
+import { Project } from "@/lib/db/project-service"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 
 interface ProjectsListProps {
   viewMode: "grid" | "list"
@@ -16,71 +20,54 @@ interface ProjectsListProps {
   companyFilter: string
 }
 
-type ProjectStatus = "In Progress" | "Completed" | "Pending Review";
-
-interface Project {
-  id: number
-  name: string
-  description: string
-  startDate: string
-  endDate: string
-  status: ProjectStatus
-  discipline: string
-  role: string
-  company: string
-  image?: string
-}
-
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: 1,
-    name: "Bridge Construction Project",
-    description: "Design and supervision of a 100m bridge construction",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    status: "In Progress",
-    discipline: "Civil Engineering",
-    role: "Project Engineer",
-    company: "Engineering Corp",
-  },
-  {
-    id: 2,
-    name: "Industrial Plant Upgrade",
-    description: "Mechanical systems upgrade for improved efficiency",
-    startDate: "2023-06-01",
-    endDate: "2024-03-31",
-    status: "In Progress",
-    discipline: "Mechanical Engineering",
-    role: "Lead Engineer",
-    company: "Manufacturing Co",
-  },
-  {
-    id: 3,
-    name: "Power Grid Optimization",
-    description: "Smart grid implementation for better power distribution",
-    startDate: "2023-03-15",
-    endDate: "2023-09-30",
-    status: "Completed",
-    discipline: "Electrical Engineering",
-    role: "Senior Engineer",
-    company: "Power Solutions Inc",
-  },
-  {
-    id: 4,
-    name: "Building Safety Assessment",
-    description: "Comprehensive safety assessment of commercial structures",
-    startDate: "2024-01-10",
-    endDate: "2024-05-30",
-    status: "Pending Review",
-    discipline: "Structural Engineering",
-    role: "Safety Engineer",
-    company: "Engineering Corp",
-  }
-]
-
 export function ProjectsList({ viewMode, searchQuery, statusFilter, companyFilter }: ProjectsListProps) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    // If no user, redirect to login page
+    if (!user && !loading) {
+      router.push('/login');
+      return;
+    }
+    
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/projects');
+        
+        if (response.status === 401) {
+          // Unauthorized, redirect to login
+          router.push('/login');
+          return;
+        }
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch projects');
+        }
+        
+        const data = await response.json();
+        setProjects(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setError('Failed to load projects. Please try again later.');
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user) {
+      fetchProjects();
+    }
+  }, [user, router]);
+  
   // Filter projects based on search query and filters
-  const filteredProjects = MOCK_PROJECTS.filter(project => {
+  const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.discipline.toLowerCase().includes(searchQuery.toLowerCase());
@@ -96,13 +83,21 @@ export function ProjectsList({ viewMode, searchQuery, statusFilter, companyFilte
     return matchesSearch && matchesStatus && matchesCompany;
   });
 
+  if (loading) {
+    return <div className="flex justify-center py-10">Loading projects...</div>;
+  }
+  
+  if (error) {
+    return <div className="p-4 bg-red-50 text-red-600 rounded-md">{error}</div>;
+  }
+
   if (filteredProjects.length === 0) {
     return <ProjectsEmptyState />
   }
 
   if (viewMode === "list") {
     return (
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -132,9 +127,11 @@ export function ProjectsList({ viewMode, searchQuery, statusFilter, companyFilte
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       {filteredProjects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+        <div key={project.id} className="h-full">
+          <ProjectCard project={project} />
+        </div>
       ))}
     </div>
   )

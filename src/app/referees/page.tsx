@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlusCircle, Search } from "lucide-react"
@@ -13,6 +13,8 @@ import { ContactRefereeModal } from "@/components/contact-referee-modal"
 import { useToast } from "@/hooks/use-toast"
 import { ToastContainer } from "@/components/ui/toast"
 import { DashboardLayout } from "@/components/DashboardLayout"
+import { fetchReferees, createReferee, updateReferee, deleteReferee, Referee } from "@/lib/referee-service"
+import { useAuth } from "@/lib/auth-context"
 
 // Define TypeScript interfaces
 interface Review {
@@ -20,24 +22,6 @@ interface Review {
   name: string;
   status: string;
   date?: string;
-}
-
-interface Referee {
-  id: number;
-  title: string;
-  firstName: string;
-  lastName: string;
-  qualifications: string;
-  email: string;
-  phone: string;
-  position: string;
-  company: string;
-  registrationType: string;
-  registrationNumber: string;
-  notes: string;
-  status: string;
-  projectIds: number[];
-  reviews: Review[];
 }
 
 interface Project {
@@ -55,50 +39,6 @@ interface MessageValues {
   requestReport?: boolean;
   reportType?: string;
 }
-
-// Sample referee data
-const initialReferees = [
-  {
-    id: 1,
-    title: "Mr.",
-    firstName: "Robert",
-    lastName: "Mkhize",
-    qualifications: "Pr.Eng",
-    email: "robert.mkhize@abcconsulting.co.za",
-    phone: "+27 82 123 4567",
-    position: "Senior Engineer",
-    company: "ABC Consulting",
-    registrationType: "ECSA",
-    registrationNumber: "20050123",
-    notes: "Robert has been a mentor throughout my career and is familiar with my work on water treatment projects.",
-    status: "active",
-    projectIds: [1, 2],
-    reviews: [
-      { id: 1, name: "TER 2 Report", status: "approved", date: "Feb 10, 2024" },
-      { id: 2, name: "ECSA Outcomes Report", status: "pending" },
-    ],
-  },
-  {
-    id: 2,
-    title: "Ms.",
-    firstName: "Lisa",
-    lastName: "Naidoo",
-    qualifications: "Pr.Eng",
-    email: "lisa.naidoo@xyzengineering.co.za",
-    phone: "+27 83 987 6543",
-    position: "Project Manager",
-    company: "XYZ Engineering",
-    registrationType: "ECSA",
-    registrationNumber: "20080456",
-    notes: "",
-    status: "active",
-    projectIds: [3, 6],
-    reviews: [
-      { id: 3, name: "TER 1 Report", status: "approved", date: "Jul 15, 2022" },
-      { id: 4, name: "Bridge Project Report", status: "feedback" },
-    ],
-  },
-]
 
 // Sample project data
 const projects = [
@@ -154,7 +94,10 @@ const projects = [
 
 export default function RefereesPage() {
   const { toast, dismiss, toasts } = useToast()
-  const [referees, setReferees] = useState<Referee[]>(initialReferees)
+  const { user } = useAuth()
+  const [referees, setReferees] = useState<Referee[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedReferee, setSelectedReferee] = useState<Referee | null>(null)
 
@@ -162,14 +105,47 @@ export default function RefereesPage() {
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false)
   const [isAssociateProjectsModalOpen, setIsAssociateProjectsModalOpen] = useState(false)
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  
+  // Fetch referees on component mount
+  useEffect(() => {
+    async function loadReferees() {
+      try {
+        setLoading(true);
+        const data = await fetchReferees(user);
+        
+        // Add fake reviews to referees for demo purposes - in a real app, this would come from the database
+        const refereesWithReviews = data.map(referee => ({
+          ...referee,
+          projectIds: [], // Initialize empty projectIds array
+          reviews: [
+            { 
+              id: Math.floor(Math.random() * 1000), 
+              name: "Demo Report", 
+              status: Math.random() > 0.5 ? "approved" : "pending",
+              date: Math.random() > 0.5 ? new Date().toLocaleDateString() : undefined
+            }
+          ]
+        }));
+        
+        setReferees(refereesWithReviews);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading referees:', err);
+        setError('Failed to load referees. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadReferees();
+  }, [user]);
 
   // Filter referees based on search query
   const filteredReferees = referees.filter(
     (referee) =>
-      referee.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      referee.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      referee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       referee.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      referee.position.toLowerCase().includes(searchQuery.toLowerCase()),
+      referee.title.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   // Get projects for a specific referee
@@ -190,40 +166,87 @@ export default function RefereesPage() {
   }
 
   // Handle saving referee (add or edit)
-  const handleSaveReferee = (values: Omit<Referee, 'id' | 'projectIds' | 'reviews' | 'status'>) => {
-    if (selectedReferee) {
-      // Edit existing referee
-      setReferees((prev) => prev.map((ref) => (ref.id === selectedReferee.id ? { ...ref, ...values } : ref)))
-      toast({
-        title: "Referee updated",
-        description: `${values.firstName} ${values.lastName}'s information has been updated.`,
-      })
-    } else {
-      // Add new referee
-      const newReferee = {
-        id: referees.length + 1,
-        ...values,
-        status: "active",
-        projectIds: [],
-        reviews: [],
+  const handleSaveReferee = async (values: any) => {
+    try {
+      if (selectedReferee) {
+        // Edit existing referee
+        const updated = await updateReferee({
+          id: selectedReferee.id,
+          name: values.firstName + ' ' + values.lastName,
+          title: values.position || values.title,
+          company: values.company,
+          email: values.email,
+          phone: values.phone,
+        }, user);
+        
+        // Update the referee in the local state
+        setReferees(prev => prev.map(ref => 
+          ref.id === updated.id 
+            ? { ...updated, projectIds: ref.projectIds || [], reviews: ref.reviews || [] } 
+            : ref
+        ));
+        
+        toast({
+          title: "Referee updated",
+          description: `${values.firstName} ${values.lastName}'s information has been updated.`,
+        });
+      } else {
+        // Add new referee
+        const created = await createReferee({
+          name: values.firstName + ' ' + values.lastName,
+          title: values.position || values.title,
+          company: values.company,
+          email: values.email,
+          phone: values.phone,
+        }, user);
+        
+        // Add the new referee to the local state with empty projectIds and reviews
+        setReferees(prev => [
+          ...prev, 
+          { 
+            ...created, 
+            projectIds: [], 
+            reviews: [] 
+          }
+        ]);
+        
+        toast({
+          title: "Referee added",
+          description: `${values.firstName} ${values.lastName} has been added as a referee.`,
+        });
       }
-      setReferees((prev) => [...prev, newReferee])
+    } catch (error) {
+      console.error('Error saving referee:', error);
       toast({
-        title: "Referee added",
-        description: `${values.firstName} ${values.lastName} has been added as a referee.`,
-      })
+        title: "Error",
+        description: `Failed to save referee information. Please try again.`,
+        variant: "destructive",
+      });
     }
   }
 
   // Handle deleting a referee
-  const handleDeleteReferee = () => {
+  const handleDeleteReferee = async () => {
     if (selectedReferee) {
-      setReferees((prev) => prev.filter((ref) => ref.id !== selectedReferee.id))
-      toast({
-        title: "Referee deleted",
-        description: `${selectedReferee.firstName} ${selectedReferee.lastName} has been removed.`,
-        variant: "destructive",
-      })
+      try {
+        await deleteReferee(selectedReferee.id, user);
+        
+        // Remove the referee from the local state
+        setReferees(prev => prev.filter(ref => ref.id !== selectedReferee.id));
+        
+        toast({
+          title: "Referee deleted",
+          description: `${selectedReferee.name} has been removed.`,
+          variant: "destructive",
+        });
+      } catch (error) {
+        console.error('Error deleting referee:', error);
+        toast({
+          title: "Error",
+          description: `Failed to delete referee. Please try again.`,
+          variant: "destructive",
+        });
+      }
     }
   }
 
@@ -239,7 +262,7 @@ export default function RefereesPage() {
       setReferees((prev) => prev.map((ref) => (ref.id === selectedReferee.id ? { ...ref, projectIds } : ref)))
       toast({
         title: "Projects associated",
-        description: `Updated project associations for ${selectedReferee.firstName} ${selectedReferee.lastName}.`,
+        description: `Updated project associations for ${selectedReferee.name}.`,
       })
     }
   }
@@ -250,114 +273,79 @@ export default function RefereesPage() {
     setIsContactModalOpen(true)
   }
 
-  // Handle sending message to referee
+  // Handle sending a message to a referee
   const handleSendMessage = (_values: MessageValues) => {
     if (selectedReferee) {
       toast({
         title: "Message sent",
-        description: `Your message has been sent to ${selectedReferee.firstName} ${selectedReferee.lastName}.`,
+        description: `Your message has been sent to ${selectedReferee.name}.`,
       })
     }
   }
 
-  // Render the referee list item
+  // Render a referee card item 
   const renderRefereeItem = (referee: Referee) => {
-    const refereeProjects = getRefereeProjects(referee.projectIds)
+    // Split the full name into first and last names
+    const nameParts = referee.name.split(' ');
+    const firstName = nameParts.shift() || "";
+    const lastName = nameParts.join(' ');
     
     return (
       <Card key={referee.id} className="overflow-hidden">
-        <div className="flex flex-col md:flex-row">
-          <div className="flex-grow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">
-                    {referee.title} {referee.firstName} {referee.lastName}
-                    {referee.qualifications && <span className="ml-2 text-sm text-muted-foreground">({referee.qualifications})</span>}
-                  </CardTitle>
-                  <CardDescription>{referee.position}, {referee.company}</CardDescription>
-                </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  referee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                }`}>
-                  {referee.status.charAt(0).toUpperCase() + referee.status.slice(1)}
+        <div className="flex flex-row sm:flex-col md:flex-row">
+          <div className="relative w-20 h-20 sm:w-full md:w-1/4 min-h-[120px] sm:h-32 md:h-auto bg-gray-100">
+            <div className="flex items-center justify-center h-full bg-primary/10 text-primary text-2xl font-bold">
+              {firstName.charAt(0)}{lastName.charAt(0)}
+            </div>
+          </div>
+
+          <div className="flex-1 p-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-lg">{referee.name}</h3>
+                <div className="text-sm text-gray-500 mb-1">
+                  {referee.title}, {referee.company}
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Contact Information</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>Email: {referee.email}</p>
-                    <p>Phone: {referee.phone}</p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Registration Details</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>Type: {referee.registrationType}</p>
-                    <p>Number: {referee.registrationNumber}</p>
-                  </div>
-                </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleContactReferee(referee)}>
+                  Contact
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleAssociateProjects(referee)}>
+                  Projects
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleEditReferee(referee)}>
+                  Edit
+                </Button>
               </div>
+            </div>
 
-              {referee.notes && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Notes</h4>
-                  <p className="text-sm text-muted-foreground">{referee.notes}</p>
-                </div>
-              )}
-
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Associated Projects ({refereeProjects.length})</h4>
-                {refereeProjects.length > 0 ? (
-                  <div className="space-y-1 text-sm">
-                    {refereeProjects.map((project) => (
-                      <div key={project.id} className="flex items-center gap-1.5">
-                        <div className={`w-2 h-2 rounded-full ${
-                          project.status === 'Completed' ? 'bg-green-500' : project.status === 'In Progress' ? 'bg-blue-500' : 'bg-amber-500'
-                        }`}></div>
-                        <span>{project.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No projects associated with this referee.</p>
-                )}
-              </div>
-
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Review Status</h4>
-                <div className="space-y-2">
-                  {referee.reviews.map((review) => (
-                    <div key={review.id} className="flex items-center justify-between text-sm">
+            <div className="mt-2 border-t pt-2">
+              <div className="text-sm font-medium">Recent Reviews:</div>
+              <ul className="mt-1 space-y-1">
+                {referee.reviews && referee.reviews.length > 0 ? (
+                  referee.reviews.map((review) => (
+                    <li key={review.id} className="text-sm flex items-center justify-between">
                       <span>{review.name}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        review.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                        review.status === 'pending' ? 'bg-amber-100 text-amber-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
-                        {review.date && ` - ${review.date}`}
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          review.status === "approved"
+                            ? "bg-green-100 text-green-800"
+                            : review.status === "pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {review.status}
+                        {review.date && ` • ${review.date}`}
                       </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-6">
-                <Button variant="outline" size="sm" onClick={() => handleEditReferee(referee)}>
-                  Edit Details
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleAssociateProjects(referee)}>
-                  Manage Projects
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleContactReferee(referee)}>
-                  Contact Referee
-                </Button>
-              </div>
-            </CardContent>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-gray-500">No reviews yet</li>
+                )}
+              </ul>
+            </div>
           </div>
         </div>
       </Card>
@@ -367,46 +355,36 @@ export default function RefereesPage() {
   return (
     <DashboardLayout>
       <main className="py-8">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex flex-col gap-6">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold">My Referees</h1>
-                <p className="text-muted-foreground mt-1">
-                  Manage referees who can verify your engineering experience for ECSA registration
-                </p>
-              </div>
+              <h1 className="text-3xl font-bold">Referees</h1>
               <Button onClick={handleAddReferee}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add New Referee
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Referee
               </Button>
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
               <Input
-                type="text"
-                placeholder="Search referees by name, company, or position..."
-                className="pl-8 w-full md:max-w-md"
+                className="pl-10"
+                placeholder="Search referees..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            {filteredReferees.length > 0 ? (
-              <div className="grid gap-6">
-                {filteredReferees.map(renderRefereeItem)}
-              </div>
+            {loading ? (
+              <div className="flex justify-center py-10">Loading referees...</div>
+            ) : error ? (
+              <div className="p-4 bg-red-50 text-red-600 rounded-md">{error}</div>
+            ) : filteredReferees.length === 0 ? (
+              <EmptyState onAddClick={handleAddReferee} />
             ) : (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground mb-4">No referees found matching your search criteria.</p>
-                  <Button onClick={handleAddReferee}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add New Referee
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {filteredReferees.map((referee) => renderRefereeItem(referee))}
+              </div>
             )}
           </div>
         </div>
@@ -416,26 +394,73 @@ export default function RefereesPage() {
       <AddEditRefereeModal
         open={isAddEditModalOpen}
         onOpenChange={setIsAddEditModalOpen}
+        referee={selectedReferee}
         onSave={handleSaveReferee}
         onDelete={handleDeleteReferee}
-        referee={selectedReferee}
       />
 
-      <AssociateProjectsModal
-        open={isAssociateProjectsModalOpen}
-        onOpenChange={setIsAssociateProjectsModalOpen}
-        onSave={handleSaveProjectAssociations}
-        referee={selectedReferee}
-        projects={projects}
-        selectedProjectIds={selectedReferee?.projectIds || []}
-      />
+      {selectedReferee && (
+        <>
+          <RefereeDetailView
+            referee={selectedReferee}
+            projects={getRefereeProjects(selectedReferee.projectIds || [])}
+            onContactClick={() => setIsContactModalOpen(true)}
+            onProjectsClick={() => setIsAssociateProjectsModalOpen(true)}
+            onEditClick={() => setIsAddEditModalOpen(true)}
+          />
 
-      <ContactRefereeModal
-        open={isContactModalOpen}
-        onOpenChange={setIsContactModalOpen}
-        onSend={handleSendMessage}
-        referee={selectedReferee}
-      />
+          <AssociateProjectsModal
+            open={isAssociateProjectsModalOpen}
+            onOpenChange={setIsAssociateProjectsModalOpen}
+            referee={selectedReferee}
+            allProjects={projects}
+            selectedProjectIds={selectedReferee.projectIds || []}
+            onSave={handleSaveProjectAssociations}
+          />
+
+          <ContactRefereeModal
+            open={isContactModalOpen}
+            onOpenChange={setIsContactModalOpen}
+            referee={selectedReferee}
+            onSend={handleSendMessage}
+          />
+        </>
+      )}
     </DashboardLayout>
+  )
+}
+
+function EmptyState({ onAddClick }: { onAddClick: () => void }) {
+  return (
+    <Card className="p-6 flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center max-w-md">
+        <div className="mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-8 h-8 text-primary"
+          >
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">No referees yet</h3>
+        <p className="text-gray-500 mb-4">
+          Add professional referees who can verify your engineering work and provide references for 
+          your ECSA registration.
+        </p>
+        <Button onClick={onAddClick}>
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Your First Referee
+        </Button>
+      </div>
+    </Card>
   )
 } 

@@ -17,8 +17,20 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  User
 } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+
+// Function to get user initials
+const getInitials = (name: string): string => {
+  return name
+    .split(" ")
+    .map(part => part[0])
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
+};
 
 interface SidebarProps {
   className?: string
@@ -29,6 +41,7 @@ interface SidebarProps {
 
 export function Sidebar({ className, isCollapsed, onCollapse, onMenuItemClick }: SidebarProps) {
   const pathname = usePathname()
+  const { user, logout } = useAuth()
 
   const menuItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -49,6 +62,23 @@ export function Sidebar({ className, isCollapsed, onCollapse, onMenuItemClick }:
     }
     
     // Don't expand the sidebar when clicking on menu items while collapsed
+    if (isCollapsed) {
+      e.stopPropagation()
+    }
+  }
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+    
+    if (onMenuItemClick) {
+      onMenuItemClick()
+    }
+    
+    // Don't expand the sidebar when clicking logout while collapsed
     if (isCollapsed) {
       e.stopPropagation()
     }
@@ -184,16 +214,7 @@ export function Sidebar({ className, isCollapsed, onCollapse, onMenuItemClick }:
               "text-destructive hover:bg-accent hover:text-accent-foreground",
               isCollapsed ? "justify-center px-0" : "px-3 gap-3"
             )}
-            onClick={(e) => {
-              // Handle logout
-              console.log("Logout clicked")
-              if (onMenuItemClick) onMenuItemClick();
-              
-              // Don't expand the sidebar when clicking logout while collapsed
-              if (isCollapsed) {
-                e.stopPropagation();
-              }
-            }}
+            onClick={handleLogout}
             title={isCollapsed ? "Logout" : undefined}
           >
             <LogOut className="h-5 w-5 flex-shrink-0" />
@@ -209,6 +230,52 @@ export function Sidebar({ className, isCollapsed, onCollapse, onMenuItemClick }:
               </div>
             )}
           </button>
+        </div>
+        
+        {/* User Profile */}
+        <div className={cn("mt-3 pt-3 border-t", isCollapsed ? "px-0 text-center" : "px-2")}>
+          <Link 
+            href="/settings" 
+            onClick={handleMenuItemClick}
+            className="block group"
+            title={isCollapsed ? "Your Profile" : undefined}
+          >
+            <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
+              <div className="relative shrink-0">
+                {user?.photoURL ? (
+                  user.photoURL.includes('ui-avatars.com') ? (
+                    <img
+                      src={user.photoURL}
+                      alt="Profile"
+                      className="rounded-full h-8 w-8 object-cover border border-border"
+                    />
+                  ) : (
+                    <Image
+                      src={user.photoURL}
+                      alt="Profile"
+                      width={32}
+                      height={32}
+                      className="rounded-full h-8 w-8 object-cover border border-border"
+                    />
+                  )
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                    {user?.displayName ? getInitials(user.displayName) : <User className="h-4 w-4" />}
+                  </div>
+                )}
+              </div>
+              {!isCollapsed && (
+                <div className="overflow-hidden">
+                  <p className="text-sm font-medium truncate">
+                    {user?.displayName || "User"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user?.email || ""}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Link>
         </div>
       </div>
     </div>

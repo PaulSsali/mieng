@@ -116,14 +116,22 @@ export default function ProfilePage() {
               <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background to-transparent h-24"></div>
               <div className="absolute -bottom-16 left-8">
                 <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-background bg-background">
-                  <Image
-                    src={imageError ? "/placeholder.svg?height=128&width=128&text=JD" : profileData.profileImage}
-                    alt="Profile"
-                    width={128}
-                    height={128}
-                    className="h-full w-full object-cover"
-                    onError={handleImageError}
-                  />
+                  {profileData.profileImage.includes('ui-avatars.com') ? (
+                    <img
+                      src={profileData.profileImage}
+                      alt="Profile"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={imageError ? "/placeholder.svg?height=128&width=128&text=JD" : profileData.profileImage}
+                      alt="Profile"
+                      width={128}
+                      height={128}
+                      className="h-full w-full object-cover"
+                      onError={handleImageError}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -162,6 +170,12 @@ export default function ProfilePage() {
                           <div className="h-full w-full flex items-center justify-center bg-gray-200">
                             <span className="animate-pulse">Uploading...</span>
                           </div>
+                        ) : profileData.profileImage.includes('ui-avatars.com') ? (
+                          <img
+                            src={profileData.profileImage}
+                            alt="Profile"
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <Image
                             src={imageError ? "/placeholder.svg?height=128&width=128&text=JD" : profileData.profileImage}

@@ -56,16 +56,16 @@ export function RoleInfoStep({ formData, updateFormData }: RoleInfoStepProps) {
           placeholder="Describe your key duties, responsibilities, and contributions to the project..."
           className="min-h-[200px]"
         />
-        <p className="text-xs text-muted-foreground">
-          Provide specific details about:
-          <ul className="list-disc ml-5 mt-1 space-y-1">
+        <div className="text-xs text-muted-foreground mt-1">
+          <p className="mb-1">Provide specific details about:</p>
+          <ul className="list-disc ml-5 space-y-1">
             <li>Your specific duties and tasks</li>
             <li>What you were personally responsible for</li>
             <li>Decisions you made or influenced</li>
             <li>How your work contributed to project outcomes</li>
             <li>Any challenges you overcame</li>
           </ul>
-        </p>
+        </div>
       </div>
       
       <div className="space-y-2">

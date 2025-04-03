@@ -31,15 +31,9 @@ export function ProjectsFilters({
   companyFilter,
   onCompanyFilterChange,
 }: ProjectsFiltersProps) {
-  // Mock companies - in a real app this would come from your data
-  const companies = [
-    "All Companies",
-    "Engineering Corp",
-    "Manufacturing Co",
-    "Power Solutions Inc",
-    "Structural Solutions Ltd",
-  ]
-
+  // These companies should be loaded from the API based on the user's actual projects
+  const companies = ["All Companies"];
+  
   return (
     <div className="space-y-4 mb-6">
       <div className="flex gap-4 flex-col sm:flex-row">

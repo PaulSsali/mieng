@@ -23,80 +23,74 @@ import {
 } from "@/components/ui/dialog"
 import { DashboardLayout } from "@/components/DashboardLayout"
 
-// Mock project data
-const MOCK_PROJECTS = [
-  {
-    id: 1,
-    name: "Bridge Construction Project",
-    description: "Design and supervision of a 100m bridge construction",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    status: "In Progress",
-    discipline: "Civil Engineering",
-    role: "Project Engineer",
-    company: "Engineering Corp",
-    outcomes: [1, 2, 3, 5]
-  },
-  {
-    id: 2,
-    name: "Industrial Plant Upgrade",
-    description: "Mechanical systems upgrade for improved efficiency",
-    startDate: "2023-06-01",
-    endDate: "2024-03-31",
-    status: "In Progress",
-    discipline: "Mechanical Engineering",
-    role: "Lead Engineer",
-    company: "Manufacturing Co",
-    outcomes: [1, 2, 4, 5, 7]
-  },
-  {
-    id: 3,
-    name: "Power Grid Optimization",
-    description: "Smart grid implementation for better power distribution",
-    startDate: "2023-03-15",
-    endDate: "2023-09-30",
-    status: "Completed",
-    discipline: "Electrical Engineering",
-    role: "Senior Engineer",
-    company: "Power Solutions Inc",
-    outcomes: [2, 3, 4, 5, 8]
-  },
-  {
-    id: 4,
-    name: "Building Safety Assessment",
-    description: "Comprehensive safety assessment of commercial structures",
-    startDate: "2024-01-10",
-    endDate: "2024-05-30",
-    status: "Pending Review",
-    discipline: "Structural Engineering",
-    role: "Safety Engineer",
-    company: "Engineering Corp",
-    outcomes: [3, 4, 6, 10]
-  },
-  {
-    id: 5,
-    name: "Environmental Impact Assessment",
-    description: "EIA for a proposed development project",
-    startDate: "2023-08-15",
-    endDate: "2023-11-30",
-    status: "Completed",
-    discipline: "Environmental Engineering",
-    role: "Environmental Engineer",
-    company: "Eco Consultants",
-    outcomes: [4, 7, 10, 11]
-  }
-]
+// Define Project interface
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  discipline: string;
+  role: string;
+  company: string;
+  outcomes: number[];
+}
 
 export default function GenerateReportPage() {
   const router = useRouter()
   const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [reportType, setReportType] = useState("")
-  const [selectedProjects, setSelectedProjects] = useState<number[]>([])
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([])
   const [generatingStatus, setGeneratingStatus] = useState<"idle" | "analyzing" | "formatting" | "saving" | "completed" | "error">("idle")
   const [progress, setProgress] = useState(0)
   const [showOutcomesAlert, setShowOutcomesAlert] = useState(false)
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch projects data
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/projects')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch projects')
+        }
+        
+        const data = await response.json()
+        
+        // Add random outcomes to projects for demo purposes
+        // In a real app, these would come from the API
+        const projectsWithOutcomes = data.map((project: Project) => ({
+          ...project,
+          outcomes: generateRandomOutcomes()
+        }))
+        
+        setProjects(projectsWithOutcomes)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching projects:', err)
+        setError('Failed to load projects. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    // Helper function to generate random ECSA outcomes
+    const generateRandomOutcomes = () => {
+      const numOutcomes = Math.floor(Math.random() * 6) + 2 // 2-7 outcomes
+      const allOutcomes = Array.from({ length: 11 }, (_, i) => i + 1)
+      const shuffled = [...allOutcomes].sort(() => 0.5 - Math.random())
+      return shuffled.slice(0, numOutcomes).sort((a, b) => a - b)
+    }
+    
+    fetchProjects()
+  }, [])
 
   // Simulate progress updates during generation
   useEffect(() => {
@@ -141,7 +135,7 @@ export default function GenerateReportPage() {
   }, [generatingStatus])
 
   // Handle the report generation workflow
-  const handleProjectSelection = (projectId: number) => {
+  const handleProjectSelection = (projectId: string) => {
     setSelectedProjects((prev) => 
       prev.includes(projectId)
         ? prev.filter(id => id !== projectId)
@@ -199,7 +193,7 @@ export default function GenerateReportPage() {
   const combinedOutcomes = Array.from(
     new Set(
       selectedProjects.flatMap(projectId => 
-        MOCK_PROJECTS.find(p => p.id === projectId)?.outcomes || []
+        projects.find(p => p.id === projectId)?.outcomes || []
       )
     )
   ).sort((a, b) => a - b)
@@ -305,11 +299,17 @@ export default function GenerateReportPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {MOCK_PROJECTS.length === 0 ? (
+                    {loading ? (
                       <div className="text-center py-8">
                         <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium mb-1">No projects found</h3>
-                        <p className="text-sm text-gray-500 mb-5">You need to create projects before generating a report</p>
+                        <h3 className="text-lg font-medium mb-1">Loading projects...</h3>
+                        <p className="text-sm text-gray-500 mb-5">Please wait while we load your projects.</p>
+                      </div>
+                    ) : error ? (
+                      <div className="text-center py-8">
+                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium mb-1">Error loading projects</h3>
+                        <p className="text-sm text-gray-500 mb-5">{error}</p>
                         <Button asChild>
                           <Link href="/projects/new">
                             <PlusCircle className="mr-2 h-4 w-4" />
@@ -320,7 +320,7 @@ export default function GenerateReportPage() {
                     ) : (
                       <div>
                         <div className="space-y-4 mb-8">
-                          {MOCK_PROJECTS.map(project => (
+                          {projects.map(project => (
                             <div key={project.id} className="flex items-start space-x-3 border p-4 rounded-md hover:bg-gray-50">
                               <Checkbox 
                                 id={`project-${project.id}`} 

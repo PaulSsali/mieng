@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Bell, User, Menu } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ToastContainer } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePathname } from "next/navigation";
 
 interface MainHeaderProps {
@@ -65,30 +63,18 @@ export function MainHeader({ showMobileMenu = false, onMobileMenuClick }: MainHe
         
         <div className="flex-1" />
         
-        <nav className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
+        <nav className="flex items-center">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/notifications" className="relative">
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+            </Link>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                  <User className="h-5 w-5" />
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Help & Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </nav>
       </div>
       <ToastContainer toasts={toasts?.map(toast => ({ ...toast, onDismiss: () => dismiss(toast.id) }))} dismiss={dismiss} />

@@ -1,12 +1,47 @@
+"use client"
+
 import Image from "next/image";
 import Link from "next/link";
 import SmoothScroll from "./components/SmoothScroll";
 import NavLink from "./components/NavLink";
+import { useAuth } from "@/lib/auth-context";
+import { useState, useEffect } from "react";
+
+// Client component to display the Firebase warning
+function FirebaseWarning() {
+  const { authInitialized } = useAuth();
+  const [isDevelopment, setIsDevelopment] = useState(false);
+  
+  useEffect(() => {
+    setIsDevelopment(process.env.NODE_ENV === 'development');
+  }, []);
+  
+  if (authInitialized || !isDevelopment) return null;
+  
+  return (
+    <div className="fixed bottom-4 right-4 max-w-md bg-amber-50 border border-amber-200 text-amber-700 rounded-md p-4 shadow-lg z-50">
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium">Firebase Not Configured</h3>
+          <div className="mt-2 text-sm">
+            <p>Firebase authentication is not properly configured. Update your .env.local file with valid Firebase credentials.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <div id="top" className="flex flex-col min-h-screen">
       <SmoothScroll />
+      <FirebaseWarning />
       {/* Header/Navigation */}
       <header className="py-4 fixed w-full top-0 bg-white/80 backdrop-blur-sm z-10">
         <div className="max-w-6xl mx-auto px-4 md:px-6 flex justify-between items-center">
@@ -117,14 +152,158 @@ export default function Home() {
                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
               </div>
-              <Image 
-                src="/dashboard-image.png" 
-                alt="eMate Dashboard Preview" 
-                width={900} 
-                height={500}
-                className="w-full" 
-                priority
-              />
+              <div className="relative">
+                <Image 
+                  src="/dashboard-screenshot.png" 
+                  alt="eMate Dashboard Preview" 
+                  width={900} 
+                  height={500}
+                  className="w-full" 
+                  priority
+                />
+                {/* Tooltip to indicate the image is interactive */}
+                <div className="absolute top-2 right-2 text-xs bg-black/50 text-white px-2 py-1 rounded pointer-events-none opacity-80">
+                  Interactive Demo
+                </div>
+                {/* Clickable areas over the dashboard image */}
+                <div className="absolute inset-0">
+                  {/* Dashboard link */}
+                  <Link 
+                    href="/dashboard"
+                    className="absolute top-[24px] left-[42px] w-[180px] h-[38px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="Go to Dashboard"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-full ml-2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      Go to Dashboard
+                    </span>
+                  </Link>
+                  {/* Outcomes link */}
+                  <Link 
+                    href="/outcomes"
+                    className="absolute top-[75px] left-[42px] w-[180px] h-[38px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="Go to Outcomes"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-full ml-2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      Go to Outcomes
+                    </span>
+                  </Link>
+                  {/* Projects link */}
+                  <Link 
+                    href="/projects"
+                    className="absolute top-[112px] left-[42px] w-[180px] h-[38px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="Go to Projects"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-full ml-2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      Go to Projects
+                    </span>
+                  </Link>
+                  {/* Reports link */}
+                  <Link 
+                    href="/reports"
+                    className="absolute top-[149px] left-[42px] w-[180px] h-[38px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="Go to Reports"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-full ml-2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      Go to Reports
+                    </span>
+                  </Link>
+                  {/* Referees link */}
+                  <Link 
+                    href="/referees"
+                    className="absolute top-[186px] left-[42px] w-[180px] h-[38px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="Go to Referees"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-full ml-2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      Go to Referees
+                    </span>
+                  </Link>
+                  
+                  {/* ECSA Outcomes Progress card */}
+                  <Link 
+                    href="/outcomes"
+                    className="absolute top-[100px] left-[405px] w-[420px] h-[170px] hover:bg-primary/10 rounded-lg transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View ECSA Outcomes Progress"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View ECSA Outcomes Progress
+                    </span>
+                  </Link>
+                  
+                  {/* Projects Overview card */}
+                  <Link 
+                    href="/projects"
+                    className="absolute top-[100px] right-[40px] w-[420px] h-[170px] hover:bg-primary/10 rounded-lg transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Projects Overview"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View Projects Overview
+                    </span>
+                  </Link>
+                  
+                  {/* View Details links */}
+                  <Link 
+                    href="/outcomes"
+                    className="absolute bottom-[42px] left-[470px] w-[100px] h-[24px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Outcomes Details"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 bottom-full mb-1 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View Outcomes Details
+                    </span>
+                  </Link>
+                  
+                  <Link 
+                    href="/projects"
+                    className="absolute bottom-[42px] right-[100px] w-[100px] h-[24px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Projects Details"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 bottom-full mb-1 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View Projects Details
+                    </span>
+                  </Link>
+                  
+                  {/* Recent Projects section */}
+                  <Link 
+                    href="/projects"
+                    className="absolute top-[350px] left-[385px] w-[180px] h-[30px] hover:bg-primary/20 rounded transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Recent Projects"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-full ml-2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View All Projects
+                    </span>
+                  </Link>
+                  
+                  {/* Project cards */}
+                  <Link 
+                    href="/projects"
+                    className="absolute top-[405px] left-[385px] w-[310px] h-[230px] hover:bg-primary/10 rounded-lg transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Building Safety Assessment"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View Project Details
+                    </span>
+                  </Link>
+                  
+                  <Link 
+                    href="/projects"
+                    className="absolute top-[405px] left-[725px] w-[310px] h-[230px] hover:bg-primary/10 rounded-lg transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Bridge Construction Project"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View Project Details
+                    </span>
+                  </Link>
+                  
+                  <Link 
+                    href="/projects"
+                    className="absolute top-[405px] right-[40px] w-[310px] h-[230px] hover:bg-primary/10 rounded-lg transition-colors duration-200 hover:ring-1 hover:ring-primary/50 group"
+                    aria-label="View Industrial Plant Upgrade"
+                  >
+                    <span className="absolute opacity-0 group-hover:opacity-100 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-primary text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity duration-200">
+                      View Project Details
+                    </span>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </section>

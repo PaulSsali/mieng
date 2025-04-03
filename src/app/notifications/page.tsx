@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MainHeader } from "@/components/MainHeader"
+import { DashboardLayout } from "@/components/DashboardLayout"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -230,9 +230,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <MainHeader />
-      
+    <DashboardLayout>
       <main className="flex-1 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -380,7 +378,7 @@ export default function NotificationsPage() {
           </div>
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   )
 }
 

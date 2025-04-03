@@ -2,24 +2,7 @@ import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
-interface Referee {
-  id: number
-  firstName: string
-  lastName: string
-  email: string
-  title?: string
-  qualifications?: string
-  phone?: string
-  position?: string
-  company?: string
-  registrationType?: string
-  registrationNumber?: string
-  notes?: string
-  status?: string
-  projectIds?: number[]
-  reviews?: any[]
-}
+import { Referee } from "@/lib/referee-service"
 
 interface AddEditRefereeModalProps {
   open: boolean
@@ -52,18 +35,23 @@ export function AddEditRefereeModal({
 
   useEffect(() => {
     if (referee) {
+      // Split the name into first and last name for editing
+      const nameParts = referee.name.split(' ');
+      const firstName = nameParts.shift() || "";
+      const lastName = nameParts.join(' ');
+      
       setValues({
-        title: referee.title || "Mr.",
-        firstName: referee.firstName || "",
-        lastName: referee.lastName || "",
-        qualifications: referee.qualifications || "",
+        title: values.title || "Mr.",
+        firstName: firstName,
+        lastName: lastName,
+        qualifications: values.qualifications || "",
         email: referee.email || "",
         phone: referee.phone || "",
-        position: referee.position || "",
+        position: referee.title || "",
         company: referee.company || "",
-        registrationType: referee.registrationType || "ECSA",
-        registrationNumber: referee.registrationNumber || "",
-        notes: referee.notes || "",
+        registrationType: values.registrationType || "ECSA",
+        registrationNumber: values.registrationNumber || "",
+        notes: values.notes || "",
       })
     } else {
       setValues({
@@ -256,27 +244,28 @@ export function AddEditRefereeModal({
                   name="notes"
                   value={values.notes}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[100px]"
-                  placeholder="Additional information about this referee..."
-                />
+                  rows={3}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder="Any additional information about this referee..."
+                ></textarea>
               </div>
-            </div>
 
-            <div className="flex justify-between p-4 border-t">
-              {referee ? (
-                <Button type="button" variant="outline" onClick={handleDeleteClick} className="text-red-600">
-                  Delete Referee
-                </Button>
-              ) : (
-                <div></div>
-              )}
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {referee ? "Save Changes" : "Add Referee"}
-                </Button>
+              <div className="flex justify-between pt-4">
+                <div>
+                  {referee && (
+                    <Button type="button" variant="outline" onClick={handleDeleteClick} className="text-red-600 hover:bg-red-50">
+                      Delete
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {referee ? "Update" : "Add"} Referee
+                  </Button>
+                </div>
               </div>
             </div>
           </form>

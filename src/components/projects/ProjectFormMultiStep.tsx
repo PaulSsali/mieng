@@ -16,16 +16,24 @@ interface ProjectFormMultiStepProps {
   onSubmit: (data: ProjectFormData) => void;
   onCancel: () => void;
   isModal?: boolean;
+  isSubmitting?: boolean;
+  initialData?: ProjectFormData;
 }
 
 type FormStep = "basic-info" | "timelines" | "role-info" | "ecsa-outcomes" | "review";
 
-export function ProjectFormMultiStep({ onSubmit, onCancel, isModal = false }: ProjectFormMultiStepProps) {
+export function ProjectFormMultiStep({ 
+  onSubmit, 
+  onCancel, 
+  isModal = false, 
+  isSubmitting = false,
+  initialData
+}: ProjectFormMultiStepProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<FormStep>("basic-info");
   
-  const [formData, setFormData] = useState<ProjectFormData>({
+  const [formData, setFormData] = useState<ProjectFormData>(initialData || {
     name: "",
     discipline: "",
     startDate: "",
@@ -42,6 +50,9 @@ export function ProjectFormMultiStep({ onSubmit, onCancel, isModal = false }: Pr
   
   // Set the user's discipline as the default when the component loads
   useEffect(() => {
+    // Skip if we have initial data
+    if (initialData) return;
+    
     const fetchUserProfile = async () => {
       if (!user) return;
       
@@ -62,7 +73,7 @@ export function ProjectFormMultiStep({ onSubmit, onCancel, isModal = false }: Pr
     };
     
     fetchUserProfile();
-  }, [user]);
+  }, [user, initialData]);
 
   const updateFormData = (data: Partial<ProjectFormData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -117,47 +128,52 @@ export function ProjectFormMultiStep({ onSubmit, onCancel, isModal = false }: Pr
     { id: "review", label: "Review", number: 5 }
   ];
 
+  const currentStepIndex = steps.findIndex(s => s.id === currentStep);
+
   return (
-    <div className={`space-y-6 ${isModal ? 'max-h-[80vh] overflow-y-auto pr-4' : ''}`}>
+    <div className={`space-y-8 ${isModal ? 'max-h-[calc(100vh-160px)] overflow-y-auto pr-2' : ''}`}>
       {/* Step Indicator */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between relative">
+          {/* Progress Line */}
+          <div className="absolute top-[15px] left-0 right-0 h-[2px] bg-gray-200 -z-10"></div>
+          <div 
+            className="absolute top-[15px] left-0 h-[2px] bg-primary -z-10 transition-all duration-300 ease-in-out"
+            style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+          ></div>
+          
+          {/* Step Circles */}
           {steps.map((step, index) => (
             <div key={step.id} className="flex flex-col items-center">
               <div 
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium 
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300
                   ${currentStep === step.id 
-                    ? 'bg-primary text-white' 
-                    : (steps.findIndex(s => s.id === currentStep) > index 
-                      ? 'bg-green-100 text-green-600 border border-green-600' 
-                      : 'bg-gray-100 text-gray-500')}
+                    ? 'bg-primary text-white scale-110 ring-4 ring-primary/20' 
+                    : (currentStepIndex > index 
+                      ? 'bg-primary/90 text-white' 
+                      : 'bg-gray-100 text-gray-500 border border-gray-300')}
                 `}
               >
-                {steps.findIndex(s => s.id === currentStep) > index 
-                  ? <CheckCircle2 className="w-5 h-5" /> 
+                {currentStepIndex > index 
+                  ? <CheckCircle2 className="w-4 h-4" /> 
                   : step.number}
               </div>
               <span 
-                className={`text-xs mt-2 
+                className={`text-xs mt-2 max-w-[80px] text-center transition-colors duration-300
                   ${currentStep === step.id 
                     ? 'text-primary font-medium' 
-                    : 'text-gray-500'}
+                    : (currentStepIndex > index ? 'text-primary/70' : 'text-gray-500')}
                 `}
               >
                 {step.label}
               </span>
-              {index < steps.length - 1 && (
-                <div className="absolute left-0 right-0 hidden sm:block">
-                  <div className={`h-0.5 w-full ${steps.findIndex(s => s.id === currentStep) > index ? 'bg-primary' : 'bg-gray-200'}`}></div>
-                </div>
-              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Form Steps */}
-      <Card className="p-6">
+      {/* Form Steps Content */}
+      <Card className="p-8 shadow-sm border rounded-xl">
         {currentStep === "basic-info" && (
           <BasicInfoStep 
             formData={formData} 
@@ -190,26 +206,35 @@ export function ProjectFormMultiStep({ onSubmit, onCancel, isModal = false }: Pr
         {currentStep === "review" && (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Review Your Project</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium">Project Name</h3>
-                <p>{formData.name}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Project Name</h3>
+                  <p className="font-medium">{formData.name}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Engineering Discipline</h3>
+                  <p>{formData.discipline}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Timeline</h3>
+                  <p>{formData.startDate} to {formData.endDate || 'Present'}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Role & Company</h3>
+                  <p>{formData.role} at {formData.company}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium">Description</h3>
-                <p>{formData.description}</p>
-              </div>
-              <div>
-                <h3 className="font-medium">Timeline</h3>
-                <p>{formData.startDate} to {formData.endDate}</p>
-              </div>
-              <div>
-                <h3 className="font-medium">Role & Company</h3>
-                <p>{formData.role} at {formData.company}</p>
-              </div>
-              <div>
-                <h3 className="font-medium">Selected ECSA Outcomes</h3>
-                <p>{formData.outcomes.length} outcomes selected</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Description</h3>
+                  <p className="text-sm">{formData.description}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-gray-500">Selected ECSA Outcomes</h3>
+                  <p>{formData.outcomes.length} outcomes selected</p>
+                </div>
               </div>
             </div>
           </div>
@@ -217,22 +242,24 @@ export function ProjectFormMultiStep({ onSubmit, onCancel, isModal = false }: Pr
       </Card>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between mt-6">
-        {currentStep === "basic-info" ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        ) : (
-          <Button type="button" variant="outline" onClick={goToPreviousStep}>
-            Back
-          </Button>
-        )}
+      <div className="flex justify-between mt-6 pt-2">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={currentStep === "basic-info" ? onCancel : goToPreviousStep}
+          disabled={isSubmitting}
+          className="px-6"
+        >
+          {currentStep === "basic-info" ? "Cancel" : "Back"}
+        </Button>
         
         <Button 
           type="button" 
-          onClick={goToNextStep}
+          onClick={currentStep === "review" ? handleSubmit : goToNextStep}
+          disabled={isSubmitting}
+          className="px-6"
         >
-          {currentStep === "review" ? "Submit" : "Continue"}
+          {currentStep === "review" ? (isSubmitting ? "Submitting..." : "Submit") : "Continue"}
         </Button>
       </div>
     </div>
