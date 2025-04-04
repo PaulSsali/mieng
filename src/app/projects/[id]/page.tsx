@@ -14,9 +14,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 interface ProjectDetailPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
@@ -25,13 +23,30 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  // Extract the project ID from params
+  useEffect(() => {
+    async function getParamId() {
+      try {
+        const { id } = await params;
+        setProjectId(id);
+      } catch (error) {
+        console.error('Error getting project ID from params:', error);
+        setError('Invalid project ID');
+      }
+    }
+    getParamId();
+  }, [params]);
 
   // Fetch the project data
   useEffect(() => {
     async function fetchProject() {
+      if (!projectId) return;
+      
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/projects/${params.id}`);
+        const response = await fetch(`/api/projects/${projectId}`);
         
         if (response.status === 401) {
           router.push('/login');
@@ -52,10 +67,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
       }
     }
 
-    if (user) {
+    if (user && projectId) {
       fetchProject();
     }
-  }, [params.id, user, router]);
+  }, [projectId, user, router]);
 
   // Check if user is authenticated
   useEffect(() => {

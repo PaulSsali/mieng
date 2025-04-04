@@ -1,5 +1,16 @@
 import { User } from "firebase/auth";
 
+// Add the MockUser interface import or definition
+interface MockUser {
+  uid: string;
+  email: string;
+  displayName: string | null;
+  photoURL: string | null;
+  emailVerified: boolean;
+  isAnonymous: boolean;
+  getIdToken: () => Promise<string>;
+}
+
 // This interface represents the user profile data structure
 export interface UserProfile {
   id: string;
@@ -17,10 +28,10 @@ export interface UserProfile {
 
 /**
  * Get the user's profile data from the API
- * @param user The Firebase user object
+ * @param user The Firebase user or MockUser object
  * @returns A promise that resolves to the user's profile data
  */
-export async function getUserProfile(user: User | null): Promise<Partial<UserProfile> | null> {
+export async function getUserProfile(user: User | MockUser | null): Promise<Partial<UserProfile> | null> {
   if (!user) return null;
   
   try {
@@ -43,7 +54,7 @@ export async function getUserProfile(user: User | null): Promise<Partial<UserPro
   } catch (error) {
     console.error("Error fetching user profile:", error);
     
-    // Fallback to basic profile from Firebase
+    // Fallback to basic profile from Firebase or MockUser
     return { 
       email: user.email || '',
       name: user.displayName || undefined,
@@ -54,11 +65,11 @@ export async function getUserProfile(user: User | null): Promise<Partial<UserPro
 
 /**
  * Update the user's profile data via the API
- * @param user The Firebase user object
+ * @param user The Firebase user or MockUser object
  * @param data The profile data to update
  */
 export async function updateUserProfile(
-  user: User | null, 
+  user: User | MockUser | null, 
   data: Partial<UserProfile>
 ): Promise<void> {
   if (!user || !user.email) return;

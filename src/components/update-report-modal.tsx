@@ -34,19 +34,55 @@ export function UpdateReportModal({ report, isOpen, onClose }: UpdateReportModal
   const [title, setTitle] = useState(report?.title || "")
   const [description, setDescription] = useState(report?.description || "")
   const [content, setContent] = useState(report?.content || "")
+  const [type, setType] = useState(report?.type || "")
+  const [status, setStatus] = useState(report?.status || "")
+  const [referee, setReferee] = useState(report?.referee || "")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      setIsSaved(true)
+    setError(null)
+    try {
+      // Create an actual API call to update the report
+      const response = await fetch(`/api/reports/${report.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          content, // This replaces the content entirely rather than appending
+          type,
+          status,
+          referee
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update report');
+      }
+      
+      setIsSaved(true);
+      
+      // Reset the saved state after a short delay
       setTimeout(() => {
-        setIsSaved(false)
-      }, 2000)
-    }, 1000)
+        setIsSaved(false);
+      }, 2000);
+      
+      // Close the modal after successful update
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error updating report:', error);
+      setError('Failed to update report. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -96,7 +132,7 @@ export function UpdateReportModal({ report, isOpen, onClose }: UpdateReportModal
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="type">Report Type</Label>
-                  <Select defaultValue={report?.type}>
+                  <Select value={type} onValueChange={setType}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -108,7 +144,7 @@ export function UpdateReportModal({ report, isOpen, onClose }: UpdateReportModal
                 </div>
                 <div>
                   <Label htmlFor="status">Status</Label>
-                  <Select defaultValue={report?.status}>
+                  <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -124,7 +160,7 @@ export function UpdateReportModal({ report, isOpen, onClose }: UpdateReportModal
 
               <div>
                 <Label htmlFor="referee">Referee</Label>
-                <Select defaultValue={report?.referee}>
+                <Select value={referee} onValueChange={setReferee}>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select referee" />
                   </SelectTrigger>
@@ -164,6 +200,12 @@ export function UpdateReportModal({ report, isOpen, onClose }: UpdateReportModal
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-4 w-4" />
               <span className="text-sm">Changes saved successfully</span>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{error}</span>
             </div>
           )}
           <div className="flex gap-2">

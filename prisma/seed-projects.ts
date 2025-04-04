@@ -18,6 +18,20 @@ async function main() {
     });
   }
   
+  // Find or create a default user for seeding
+  let defaultUser = await prisma.user.findFirst();
+  
+  if (!defaultUser) {
+    console.log('Creating default user...');
+    defaultUser = await prisma.user.create({
+      data: {
+        email: 'seed@example.com',
+        name: 'Seed User',
+        role: 'ENGINEER'
+      }
+    });
+  }
+  
   // Create mock projects
   const projects = [
     {
@@ -79,6 +93,7 @@ async function main() {
         discipline: project.discipline,
         role: project.role,
         organizationId: project.organizationId,
+        userId: defaultUser.id, // Add the userId from the default user
       }
     });
   }

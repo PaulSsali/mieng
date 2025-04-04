@@ -37,7 +37,25 @@ export function ProjectsList({ viewMode, searchQuery, statusFilter, companyFilte
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/projects');
+        
+        // Get the authentication token if available
+        let token = null;
+        if (user && 'getIdToken' in user) {
+          token = await user.getIdToken();
+        }
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        // Add the token if available
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch('/api/projects', {
+          headers
+        });
         
         if (response.status === 401) {
           // Unauthorized, redirect to login

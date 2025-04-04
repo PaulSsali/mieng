@@ -11,9 +11,7 @@ import { toast } from "react-hot-toast";
 import { Project } from "@/lib/db/project-service";
 
 interface EditProjectPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function EditProjectPage({ params }: EditProjectPageProps) {
@@ -23,13 +21,30 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  // Extract the project ID from params
+  useEffect(() => {
+    async function getParamId() {
+      try {
+        const { id } = await params;
+        setProjectId(id);
+      } catch (error) {
+        console.error('Error getting project ID from params:', error);
+        setError('Invalid project ID');
+      }
+    }
+    getParamId();
+  }, [params]);
 
   // Fetch the project data
   useEffect(() => {
     async function fetchProject() {
+      if (!projectId) return;
+      
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/projects/${params.id}`);
+        const response = await fetch(`/api/projects/${projectId}`);
         
         if (response.status === 401) {
           router.push('/login');
@@ -50,10 +65,10 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
       }
     }
 
-    if (user) {
+    if (user && projectId) {
       fetchProject();
     }
-  }, [params.id, user, router]);
+  }, [projectId, user, router]);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -64,7 +79,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
   }, [user, loading, router]);
 
   const handleSubmit = async (data: ProjectFormData) => {
-    if (!user) {
+    if (!user || !projectId) {
       toast.error('You must be logged in to update a project');
       router.push('/login');
       return;
@@ -72,7 +87,7 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
 
     try {
       setIsSubmitting(true);
-      const updatedProject = await updateExistingProject(params.id, data);
+      const updatedProject = await updateExistingProject(projectId, data);
       toast.success('Project updated successfully!');
       router.push("/projects");
     } catch (error) {

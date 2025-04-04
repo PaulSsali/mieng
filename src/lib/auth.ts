@@ -9,7 +9,7 @@ export function getAuthenticatedUserId(): string {
   // and throw an error if the user is not authenticated
   
   // For development, we'll return a dummy ID if no user is authenticated
-  if (!auth.currentUser) {
+  if (!auth || !auth.currentUser) {
     // This is a development fallback and should be replaced with proper auth in production
     return "dev-user-id";
   }

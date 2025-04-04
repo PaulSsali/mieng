@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MainHeader } from "@/components/MainHeader";
 import { ProjectsHeader } from '@/components/projects/ProjectsHeader'
@@ -12,21 +12,25 @@ import { ProjectFormData } from '@/components/projects/ProjectForm';
 import { createNewProject } from "@/lib/project-service";
 import { toast } from "react-hot-toast";
 
+// Component that uses searchParams wrapped in Suspense
+function NewProjectChecker({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsOpen(true);
+    }
+  }, [searchParams, setIsOpen]);
+  
+  return null;
+}
+
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-  
-  const searchParams = useSearchParams();
-  
-  // Check for 'new' query parameter
-  useEffect(() => {
-    if (searchParams.get('new') === 'true') {
-      setIsNewProjectModalOpen(true);
-    }
-  }, [searchParams]);
   
   const handleAddProject = async (data: ProjectFormData) => {
     try {
@@ -53,6 +57,11 @@ export default function ProjectsPage() {
 
   return (
     <DashboardLayout>
+      {/* Wrap searchParams usage in Suspense */}
+      <Suspense fallback={null}>
+        <NewProjectChecker setIsOpen={setIsNewProjectModalOpen} />
+      </Suspense>
+      
       <main>
         <div className="container mx-auto px-4 py-6">
           <ProjectsHeader />

@@ -1,39 +1,122 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { getAuth } from 'firebase-admin/auth';
-import { initAdmin } from '@/lib/firebase-admin';
+import { initAdmin, hasAdminAuth } from '@/lib/firebase-admin';
 
 // Initialize Firebase Admin if not already initialized
-initAdmin();
+const adminInitialized = initAdmin();
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isLocalAuthMode = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH === 'true';
 
 // Authentication check using Firebase admin
 async function getAuthenticatedUserId(req: NextRequest): Promise<string | null> {
+  console.log('[AuthCheck Dashboard] Starting authentication check...');
   try {
+    // If using local auth mode in development, use the test user ID
+    if (isDevelopment && isLocalAuthMode) {
+      console.log('[AuthCheck Dashboard] Using local dev user ID.');
+      return await getOrCreateDevUser("local-test@example.com", "Local Test User");
+    }
+    
     // Get the Firebase ID token from the Authorization header
-    const idToken = req.headers.get('Authorization')?.split('Bearer ')[1];
-    if (!idToken) {
-      // For development fallback
-      return 'default-user-id';
+    const authHeader = req.headers.get('Authorization');
+    const idToken = authHeader?.startsWith('Bearer ') 
+      ? authHeader.split('Bearer ')[1] 
+      : null;
+      
+    console.log(`[AuthCheck Dashboard] Received token: ${idToken ? 'Yes' : 'No'}`);
+
+    // If we're in development without a token, use a consistent ID based on a real user
+    if (isDevelopment && (!idToken || idToken === 'undefined')) {
+      console.log('[AuthCheck Dashboard] Development mode, no token found. Using real test user.');
+      return await getOrCreateDevUser("test@example.com", "Test User");
     }
-
-    // Verify the Firebase ID token
-    const decodedToken = await getAuth().verifyIdToken(idToken);
-    const email = decodedToken.email;
-
-    if (!email) {
-      return null;
+    
+    // Check if Admin SDK is ready
+    const isAdminSdkReady = hasAdminAuth();
+    console.log(`[AuthCheck Dashboard] Firebase Admin SDK Ready: ${isAdminSdkReady}`);
+    
+    // If we have a token and Admin SDK is ready, verify it with Firebase
+    if (idToken && isAdminSdkReady) {
+      try {
+        console.log('[AuthCheck Dashboard] Verifying Firebase token...');
+        const decodedToken = await getAuth().verifyIdToken(idToken);
+        const email = decodedToken.email;
+        console.log(`[AuthCheck Dashboard] Token verified. Email from token: ${email}`);
+        
+        if (email) {
+          // Find user by email
+          console.log(`[AuthCheck Dashboard] Looking up user in DB with email: ${email}`);
+          const user = await prisma.user.findUnique({
+            where: { email }
+          });
+          
+          if (user) {
+            console.log(`[AuthCheck Dashboard] User found in DB. Returning ID: ${user.id}`);
+            return user.id;
+          } else {
+            console.warn(`[AuthCheck Dashboard] User with email ${email} not found in DB. Creating now.`);
+            // Create user if not found
+            return await createUserInDb(email, email.split('@')[0]);
+          }
+        } else {
+           console.warn('[AuthCheck Dashboard] Email not found in decoded token.');
+        }
+      } catch (error) {
+        console.error('[AuthCheck Dashboard] Error verifying Firebase token:', error);
+      }
+    } else if (!isAdminSdkReady) {
+       console.warn('[AuthCheck Dashboard] Skipping token verification because Admin SDK is not ready.');
     }
+    
+    // Fallback for development - use a real test user instead of "default-user-id"
+    if (isDevelopment) {
+      console.warn('[AuthCheck Dashboard] Falling back to test user for development.');
+      return await getOrCreateDevUser("nylah@example.com", "Nylah Test");
+    }
+    
+    console.warn('[AuthCheck Dashboard] Authentication failed. Returning null.');
+    return null;
+  } catch (error: unknown) {
+    const typedError = error instanceof Error ? error : new Error(String(error));
+    console.error('[AuthCheck Dashboard] Unexpected error during authentication:', typedError);
+    return null;
+  }
+}
 
-    // Find user by email to get their ID
-    const user = await prisma.user.findUnique({
-      where: { email }
+// Helper function to get or create a development test user
+async function getOrCreateDevUser(email: string, name: string): Promise<string> {
+  // Try to find the user first
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (existingUser) {
+    console.log(`[AuthCheck Dashboard] Found existing test user: ${existingUser.id}`);
+    return existingUser.id;
+  }
+
+  // If not found, create the user
+  return await createUserInDb(email, name);
+}
+
+// Helper function to create a user in the database
+async function createUserInDb(email: string, name: string): Promise<string> {
+  try {
+    // Create a new user
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        name,
+        role: 'ENGINEER'
+      }
     });
 
-    return user?.id || 'default-user-id';
+    console.log(`[AuthCheck Dashboard] Created new user with ID: ${newUser.id}`);
+    return newUser.id;
   } catch (error) {
-    console.error('Error authenticating user:', error);
-    // For development fallback
-    return 'default-user-id';
+    console.error(`[AuthCheck Dashboard] Error creating user ${email}:`, error);
+    throw error;
   }
 }
 
@@ -64,16 +147,20 @@ interface RefereeType {
 }
 
 export async function GET(req: NextRequest) {
+  console.log('[GET /api/dashboard] Received request');
   try {
     const userId = await getAuthenticatedUserId(req);
+    console.log(`[GET /api/dashboard] Authenticated User ID: ${userId}`);
     
     if (!userId) {
+      console.warn('[GET /api/dashboard] Unauthorized - No User ID found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
     // Get the 3 most recent projects
     let recentProjects: ProjectType[] = [];
     try {
+      console.log(`[GET /api/dashboard] Fetching projects for userId: ${userId}`);
       const projects = await prisma.project.findMany({
         where: {
           userId: userId
@@ -91,11 +178,12 @@ export async function GET(req: NextRequest) {
           outcomes: true  // This will include all outcome responses for the project
         }
       });
+      console.log(`[GET /api/dashboard] Found ${projects.length} projects`);
       
       // Map database results to our ProjectType interface
       recentProjects = projects as ProjectType[];
     } catch (projectsError) {
-      console.error("Error fetching recent projects:", projectsError);
+      console.error("[GET /api/dashboard] Error fetching recent projects:", projectsError);
       recentProjects = [];
     }
     
@@ -107,8 +195,9 @@ export async function GET(req: NextRequest) {
           userId: userId
         }
       });
+      console.log(`[GET /api/dashboard] Total project count for user: ${projectCount}`);
     } catch (countError) {
-      console.error("Error counting projects:", countError);
+      console.error("[GET /api/dashboard] Error counting projects:", countError);
       projectCount = 0;
     }
     
@@ -218,7 +307,7 @@ export async function GET(req: NextRequest) {
       }, { status: 500 });
     }
   } catch (error) {
-    console.error("Dashboard API error:", error);
+    console.error("[GET /api/dashboard] Dashboard API error:", error);
     return NextResponse.json({
       error: "Internal server error"
     }, { status: 500 });

@@ -14,10 +14,13 @@ export default function Login() {
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   const { login, loginWithGoogle, loading, error, clearError, authInitialized, firebaseAvailable, isLocalMode } = useAuth();
   const [isDevelopment, setIsDevelopment] = useState(false);
+  const [envValue, setEnvValue] = useState<string | undefined>('');
 
   // Detect development environment
   useEffect(() => {
     setIsDevelopment(process.env.NODE_ENV === 'development');
+    // Get actual environment variable value
+    setEnvValue(process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH);
   }, []);
 
   // Clear any existing errors when the component mounts or unmounts
@@ -145,6 +148,18 @@ export default function Login() {
           {/* Only render conditional elements on the client side after hydration */}
           {isClient && (
             <>
+              {/* Debug info - only in development mode */}
+              {isDevelopment && (
+                <div className="mb-4 p-4 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg">
+                  <h5 className="font-medium mb-1">Debug Info</h5>
+                  <div className="text-xs font-mono">
+                    <p>NEXT_PUBLIC_ENABLE_LOCAL_AUTH: "{envValue}"</p>
+                    <p>isLocalMode from context: {isLocalMode ? "true" : "false"}</p>
+                    <p>firebaseAvailable: {firebaseAvailable ? "true" : "false"}</p>
+                  </div>
+                </div>
+              )}
+              
               {isLocalMode && (
                 <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg relative">
                   <div className="flex">

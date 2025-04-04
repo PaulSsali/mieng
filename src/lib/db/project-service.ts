@@ -177,6 +177,29 @@ export async function createProject(projectData: Omit<Project, 'id'>, userId: st
     // Extract outcome responses and milestones for separate creation
     const { outcomes = [], outcomeResponses = {}, milestones = [], ...mainProjectData } = projectData;
     
+    // Log the user ID for debugging
+    console.log(`Creating project for userId: ${userId}`);
+    
+    // Check if the organization exists, create one if it doesn't
+    let organizationId;
+    const firstOrg = await prisma.organization.findFirst();
+    
+    if (!firstOrg) {
+      console.log('No organization found, creating default organization');
+      // Create a default organization
+      const defaultOrg = await prisma.organization.create({
+        data: {
+          name: 'Default Organization',
+          description: 'Automatically created organization'
+        }
+      });
+      organizationId = defaultOrg.id;
+    } else {
+      organizationId = firstOrg.id;
+    }
+    
+    console.log(`Using organization ID: ${organizationId}`);
+    
     // Create the main project record
     const dbProject = await prisma.project.create({
       data: {
@@ -184,7 +207,7 @@ export async function createProject(projectData: Omit<Project, 'id'>, userId: st
         description: mainProjectData.description,
         startDate: new Date(mainProjectData.startDate),
         endDate: mainProjectData.endDate ? new Date(mainProjectData.endDate) : undefined,
-        status: mapStatusToDb(mainProjectData.status),
+        status: 'ACTIVE',
         discipline: mainProjectData.discipline,
         role: mainProjectData.role,
         company: mainProjectData.company,
@@ -192,12 +215,8 @@ export async function createProject(projectData: Omit<Project, 'id'>, userId: st
         responsibilities: mainProjectData.responsibilities,
         referee: mainProjectData.referee,
         userId, // Use the provided userId
-        // We need an organization ID - get the first one for simplicity
-        organization: {
-          connect: { 
-            id: (await prisma.organization.findFirst())?.id || '' 
-          }
-        }
+        // Connect to the organization using the ID directly
+        organizationId: organizationId
       },
     });
     

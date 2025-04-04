@@ -8,18 +8,39 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isBrowser = typeof window !== 'undefined';
 
 // Check if local auth mode is enabled
-const localAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH === 'true';
+export const isLocalAuthMode = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH === 'true';
+
+// Debug logs - Moved after variable declarations
+if (isDevelopment) {
+  console.log('Firebase initialization check:');
+  console.log('- NODE_ENV:', process.env.NODE_ENV);
+  console.log('- NEXT_PUBLIC_ENABLE_LOCAL_AUTH:', process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH);
+  console.log('- isLocalAuthMode:', isLocalAuthMode);
+  console.log('Checking client-side Firebase config variables:');
+  console.log('- NEXT_PUBLIC_FIREBASE_API_KEY:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? `(set, length: ${process.env.NEXT_PUBLIC_FIREBASE_API_KEY.length})` : '(not set)');
+  console.log('- NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? `(set, value: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID})` : '(not set)');
+}
 
 // More robust validation for Firebase configuration
 // Check if we have real Firebase credentials (not just any values, but valid-looking ones)
-const hasValidConfig = 
+const hasValidApiKey = 
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY.length > 10 &&
   !process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('your-') &&
-  !process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('placeholder') &&
+  !process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('placeholder');
+
+const hasValidProjectId = 
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && 
   !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID.includes('your-') &&
   !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID.includes('placeholder');
+
+const hasValidConfig = hasValidApiKey && hasValidProjectId;
+
+if (isDevelopment) {
+  console.log(`[Debug] hasValidApiKey: ${hasValidApiKey}`);
+  console.log(`[Debug] hasValidProjectId: ${hasValidProjectId}`);
+  console.log(`[Debug] hasValidConfig evaluation: ${hasValidConfig}`);
+}
 
 // Your web app's Firebase configuration - even more defensive
 const firebaseConfig = hasValidConfig ? {
@@ -38,13 +59,13 @@ let auth: Auth | null = null;
 let analytics: Analytics | null = null;
 
 // Check if we should try to initialize Firebase
-const shouldInitFirebase = (firebaseConfig && (isBrowser || !isDevelopment)) || (isDevelopment && localAuthEnabled);
+const shouldInitFirebase = (firebaseConfig && (isBrowser || !isDevelopment)) || (isDevelopment && isLocalAuthMode);
 
 // Only initialize Firebase if we have valid config or local auth is enabled
 if (shouldInitFirebase) {
   try {
     // If local auth is enabled in development, use a mock config
-    const configToUse = (!firebaseConfig && isDevelopment && localAuthEnabled) 
+    const configToUse = (!firebaseConfig && isDevelopment && isLocalAuthMode) 
       ? {
           apiKey: "demo-api-key",
           authDomain: "demo-project.firebaseapp.com",
@@ -69,7 +90,7 @@ if (shouldInitFirebase) {
         
         // In development, we can use local emulators if needed
         if (isDevelopment && isBrowser) {
-          if (localAuthEnabled || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
+          if (isLocalAuthMode || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
             if (auth) connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
             console.log('Connected to Firebase Auth emulator');
           }
@@ -113,4 +134,5 @@ if (shouldInitFirebase) {
 
 export { app, auth, analytics };
 export const hasAuth = !!auth;
-export const isLocalAuthMode = isDevelopment && localAuthEnabled; 
+// isLocalAuthMode is already exported at the top
+// export const isLocalAuthMode = isDevelopment && isLocalAuthMode; 
