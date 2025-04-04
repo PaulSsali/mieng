@@ -18,9 +18,16 @@ interface ProjectsListProps {
   searchQuery: string
   statusFilter: string
   companyFilter: string
+  refreshTrigger?: number // Optional prop to trigger refresh
 }
 
-export function ProjectsList({ viewMode, searchQuery, statusFilter, companyFilter }: ProjectsListProps) {
+export function ProjectsList({ 
+  viewMode, 
+  searchQuery, 
+  statusFilter, 
+  companyFilter,
+  refreshTrigger = 0 // Default to 0
+}: ProjectsListProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +89,7 @@ export function ProjectsList({ viewMode, searchQuery, statusFilter, companyFilte
     if (user) {
       fetchProjects();
     }
-  }, [user, router]);
+  }, [user, router, refreshTrigger]); // Add refreshTrigger to dependency array
   
   // Filter projects based on search query and filters
   const filteredProjects = projects.filter(project => {

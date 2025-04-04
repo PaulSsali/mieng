@@ -31,14 +31,15 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   const handleAddProject = async (data: ProjectFormData) => {
     try {
       await createNewProject(data);
       toast.success('Project created successfully!');
       setIsNewProjectModalOpen(false);
-      // We don't need to manually refresh as the ProjectsList component
-      // should fetch the latest projects when it mounts
+      
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create project');
@@ -47,7 +48,6 @@ export default function ProjectsPage() {
   
   const handleCloseModal = () => {
     setIsNewProjectModalOpen(false);
-    // Remove the 'new' query parameter from the URL without navigation
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('new');
@@ -57,7 +57,6 @@ export default function ProjectsPage() {
 
   return (
     <DashboardLayout>
-      {/* Wrap searchParams usage in Suspense */}
       <Suspense fallback={null}>
         <NewProjectChecker setIsOpen={setIsNewProjectModalOpen} />
       </Suspense>
@@ -80,6 +79,7 @@ export default function ProjectsPage() {
             searchQuery={searchQuery}
             statusFilter={statusFilter}
             companyFilter={companyFilter}
+            refreshTrigger={refreshTrigger}
           />
           
           <ProjectFormModal
