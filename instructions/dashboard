@@ -1,0 +1,90 @@
+# Dashboard Page - Requirements & UI Specifications
+
+## 1. Overview
+The **Dashboard Page** provides engineers with an overview of their ECSA registration progress, engineering experience, CPD tracking, and actionable tasks. The page features a clean UI with interactive elements, progress tracking, and quick access to key sections.
+
+## 2. Functional Requirements
+### 2.1 User Authentication
+- Users must be authenticated to access the dashboard.
+- The **MainHeader** component should include user profile access and logout options.
+
+### 2.2 Welcome Section
+- Display a welcome message with the user’s first name.
+- Provide a brief summary of the dashboard’s purpose.
+- Include a call-to-action (CTA) button: **“Add Project”** with a `PlusCircle` icon.
+- Background image overlay for aesthetics (`/images/dashboard-hero.png`).
+
+### 2.3 Key Progress Cards
+The dashboard contains the following **progress tracking cards**:
+1. **ECSA Outcomes Progress**
+   - Displays progress towards 11 ECSA outcomes.
+   - Uses a `Progress` bar to visualize completion percentage.
+   - Shows `View Details` button linking to `/outcomes`.
+
+2. **CPD Points Tracking**
+   - Displays CPD points earned vs. required.
+   - Uses a `Progress` bar to visualize compliance.
+   - Shows `View Details` button linking to `/cpd`.
+
+3. **Projects Overview**
+   - Displays number of projects and total experience duration.
+   - Uses a `Progress` bar for visual indication.
+   - Shows `View Details` button linking to `/projects`.
+
+### 2.4 Recent Projects Section
+- Displays the user’s **latest three projects**.
+- Each project includes:
+  - Title, date range, engineering discipline, and mapped outcomes.
+  - `Edit` button for modifying project details.
+- Shows a `View All Projects` button linking to `/projects`.
+
+### 2.5 Action Items Section
+- Lists important tasks requiring user attention.
+- Uses different icons for priority indicators:
+  - `AlertCircle` (Amber): **Missing Outcomes** warning.
+  - `Clock` (Blue): **Upcoming Report Due**.
+  - `CheckCircle` (Green): **CPD Compliance Achieved**.
+- Each task includes a description and a `View Recommendations` or `Start Draft` link.
+
+### 2.6 Referee Management
+- Lists referees/mentors associated with the user’s experience.
+- Each referee includes:
+  - Name, title, and company.
+  - `Contact` button for quick communication.
+- Shows a `Manage Referees` button linking to `/referees`.
+
+### 2.7 AI Report Assistant
+- Describes the AI-powered reporting assistant.
+- Highlights key AI features:
+  - Auto-references projects for ECSA-compliant reports.
+- Includes a `Start AI Draft` button linking to the AI report generator.
+
+## 3. UI Specifications
+### 3.1 Layout
+- **Header:** `MainHeader` component with navigation.
+- **Main Content:** Grid layout for sections (`md:grid-cols-3`, `md:grid-cols-2` for different groupings).
+- **Cards:** `Card` components with `CardHeader`, `CardContent`, and `CardFooter`.
+
+### 3.2 Components Used
+- **ShadCN/UI Components:** `Card`, `Button`, `Progress`
+- **Lucide Icons:** `PlusCircle`, `AlertCircle`, `CheckCircle`, `Clock`, `ArrowRight`
+- **Next.js Features:** `Image`, `Link`
+
+### 3.3 Color & Styling
+- **Primary Color:** Gradient background on welcome section.
+- **Accent Colors:** Different colors for progress indicators and alerts.
+- **Typography:** Consistent font hierarchy (`text-3xl font-bold` for main headers, `text-sm text-muted-foreground` for descriptions).
+
+## 4. Navigation & Interaction
+- Clicking any **“View Details”** button navigates to the relevant section (`/outcomes`, `/cpd`, `/projects`).
+- Clicking **“Add Project”** button opens the project creation flow.
+- Clicking **“Edit”** on a project allows the user to modify details.
+- Action items link to the necessary pages for resolution.
+
+## 5. Future Enhancements
+- **Filter & Sort for Recent Projects** (e.g., by date, discipline, outcomes achieved).
+- **Referee Collaboration Feature** (invite referees, leave comments on projects).
+- **AI Report Draft Preview** within the dashboard instead of navigating away.
+
+This document serves as a detailed blueprint for the development of the **Dashboard Page**, ensuring clarity in implementation and design consistency.
+

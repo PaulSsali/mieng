@@ -1,0 +1,98 @@
+# Signup Page Requirements Document
+
+## 1. Overview
+The Signup Page is a multi-step form that allows engineers to create an account and set their preferences for tracking and drafting reports. The process consists of **five steps** with a progress indicator and dynamic form rendering.
+
+## 2. Functional Requirements
+
+### 2.1 Multi-Step Signup Process
+- The signup process consists of **five steps**:
+  1. **Personal Information** – Collects user details (name, email, password)
+  2. **Engineering Discipline** – Captures the user's engineering field
+  3. **Work Experience** – Gathers the user's experience in years
+  4. **Report Completion Preferences** – Asks about time commitment and goals
+  5. **Confirmation** – Displays entered data for final review
+
+### 2.2 Form Navigation
+- Users can navigate **forward** using the "Next" button and **backward** using the "Back" button.
+- Users cannot proceed to the next step unless the required fields are filled in.
+- Upon completing the final step, the "Finish Setup" button submits the form.
+- Clicking "Finish Setup" redirects the user to the **dashboard**.
+- Navigation buttons become disabled when necessary (e.g., "Back" on step 1).
+
+### 2.3 Data Handling
+- Form data is stored in a `useState` object.
+- Updates to form fields modify this object dynamically.
+- Final submission sends the collected data to the backend.
+
+### 2.4 Progress Indicator
+- A **progress bar** shows the user’s current step as a percentage.
+- **Step indicators** display numbers and descriptions for each step.
+- Completed steps are marked with a **checkmark icon**.
+
+### 2.5 Validation and Error Handling
+- Password fields require a match between `password` and `confirmPassword`.
+- Email field must follow a valid email format.
+- All fields are required unless stated otherwise.
+- Errors are displayed inline next to the relevant fields.
+
+## 3. UI Specifications
+
+### 3.1 Layout & Structure
+- **Header Section**:
+  - Displays the logo (`eMate` with an **Award icon**) on the left.
+  - Provides a "Log in" link on the right for existing users.
+
+- **Main Container**:
+  - Centered card layout with a maximum width of **2xl**.
+  - Background: Light gray (`bg-gray-50`).
+
+- **Card Component**:
+  - **Header**: Displays the step title and description.
+  - **Content**: Loads the relevant form dynamically.
+  - **Footer**: Contains "Back" and "Next" buttons.
+
+### 3.2 Buttons
+- **Primary Actions**:
+  - `Next` (Primary color, advances to the next step)
+  - `Finish Setup` (Primary color, submits form and redirects to the dashboard)
+- **Secondary Actions**:
+  - `Back` (Outlined style, returns to the previous step)
+- **Icons**:
+  - `ArrowLeft` (Back button icon)
+  - `ArrowRight` (Next button icon)
+  - `Check` (Finish Setup icon & completed step indicator)
+
+### 3.3 Form Components
+Each step loads a separate form component:
+- **Step 1**: `PersonalInfoForm` (Text inputs: Name, Email, Password, Confirm Password)
+- **Step 2**: `DisciplineForm` (Dropdown: Engineering Discipline)
+- **Step 3**: `ExperienceForm` (Dropdown: Years of Experience, Checkbox: Has Mentor)
+- **Step 4**: `AvailabilityForm` (Number input: Hours per week, Dropdown: Completion Timeline)
+- **Step 5**: `ConfirmationScreen` (Displays entered information for review)
+
+### 3.4 Accessibility & Responsiveness
+- Uses **semantic HTML** for accessibility.
+- Keyboard navigable via **Tab key**.
+- All interactive elements have proper **ARIA labels**.
+- Responsive across **mobile, tablet, and desktop**.
+  - **Mobile**: Single-column layout with full-width form.
+  - **Desktop**: Centered card layout with progress bar.
+
+## 4. User Flow Summary
+1. **User visits the signup page**.
+2. **User enters personal details** (step 1).
+3. **User selects their engineering discipline** (step 2).
+4. **User inputs work experience** (step 3).
+5. **User defines availability and completion preferences** (step 4).
+6. **User reviews entered information** (step 5).
+7. **User submits the form** and is redirected to the dashboard.
+
+## 5. Future Enhancements
+- Add **progress autosave** so users can resume later.
+- Allow **Google/Microsoft SSO** for faster signup.
+- Introduce **onboarding tips** to guide users through form completion.
+
+---
+This document provides a clear structure for implementing the signup process, ensuring a smooth user experience and intuitive UI design. 🚀
+

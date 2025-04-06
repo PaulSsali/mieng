@@ -1,0 +1,200 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+AI-Powered Engineering Report Tracking & Drafting SaaS
+
+1. Development Philosophy
+
+Key Principles:
+	•	Scalability: Design architecture for future expansion without major refactoring.
+	•	Security First: Implement strong authentication, encrypted data handling, and API security.
+	•	Performance-Oriented Development: Optimize database queries, reduce re-renders, and leverage caching.
+	•	User-Centric Design: Ensure an intuitive UI/UX experience, following WCAG accessibility guidelines.
+	•	Test-Driven Development (TDD): Use automated unit, integration, and E2E testing.
+
+⸻
+
+2. Frontend Development
+
+Technologies:
+	•	Framework: React.js, Next.js (App Router)
+	•	Styling: Tailwind CSS, ShadCN/UI
+	•	State Management: React Context, Zustand
+	•	Component Accessibility: Radix UI Primitives
+	•	Data Fetching: SWR / React Query
+
+Best Practices:
+
+Component Structure:
+	•	Component-Based Architecture: Keep components modular, reusable, and testable.
+	•	File Structure:
+
+/src
+  /components
+  /pages
+  /hooks
+  /contexts
+  /utils
+  /services
+
+
+	•	Naming Conventions:
+	•	PascalCase for components: UserDashboard.tsx
+	•	camelCase for functions/variables: handleSubmitReport
+	•	kebab-case for filenames: report-summary.tsx
+
+Performance Optimization:
+	•	React.memo(): Prevent unnecessary re-renders.
+	•	useCallback & useMemo: Optimize expensive computations.
+	•	Lazy Loading & Code Splitting: Dynamically import non-critical components.
+	•	Optimized Images: Use Next.js <Image /> for efficient rendering.
+
+Data Fetching Strategies:
+	•	Server-Side Rendering (SSR): Fetch critical data before rendering pages.
+	•	Static Site Generation (SSG): Use for frequently accessed static data.
+	•	Incremental Static Regeneration (ISR): Revalidate stale content periodically.
+	•	Client-Side Fetching: Use SWR or React Query for dynamic data.
+
+⸻
+
+3. Backend Development
+
+Technologies:
+	•	Framework: Node.js (NestJS/Express)
+	•	Language: TypeScript
+	•	Database: PostgreSQL (with Prisma ORM)
+	•	Cache: Redis
+
+Best Practices:
+
+Architecture:
+	•	Modular Structure: Organize backend into feature-based modules.
+	•	Dependency Injection (DI): Use NestJS providers for dependency management.
+	•	Error Handling Middleware: Centralized error handling with global exception filters.
+
+API Development:
+	•	RESTful & GraphQL: Use REST for standard endpoints, GraphQL for flexible querying.
+	•	Versioning: Implement /v1/ in API routes for future upgrades.
+	•	Validation: Use class-validator and DTOs to validate requests.
+
+Database Best Practices:
+	•	Use Prisma ORM: Provides type-safe database interactions.
+	•	Connection Pooling: Optimize database connections using pgbouncer.
+	•	Indexing: Optimize query performance with indexes on frequently queried columns.
+	•	Database Backups: Automate daily backups and store them securely.
+
+Caching & Performance:
+	•	Redis Caching: Cache frequently accessed data for faster responses.
+	•	Rate Limiting: Prevent abuse by limiting API requests.
+	•	Queue Processing: Use BullMQ for handling background jobs.
+
+⸻
+
+4. AI & Machine Learning
+
+Technologies:
+	•	AI Model: OpenAI GPT (for drafting and formatting reports)
+	•	Vector Database: Pinecone (for experience analysis and recommendation)
+	•	AI Orchestration: LangChain
+
+Best Practices:
+
+AI Workflow Implementation:
+	1.	Data Collection: Capture project details from engineers via forms or voice input.
+	2.	Preprocessing: Normalize and clean input data to ensure consistency.
+	3.	AI Model Selection: Use GPT-4 for generating structured reports.
+	4.	Prompt Engineering: Design optimized prompts to generate high-quality reports.
+	5.	Validation & Feedback Loop: Implement AI-generated drafts with user feedback for continuous improvement.
+
+Performance Optimization:
+	•	Batch Processing: Handle large workloads asynchronously.
+	•	Streaming Responses: Use WebSockets for real-time AI interactions.
+	•	API Cost Management: Optimize OpenAI API calls to minimize token usage.
+
+⸻
+
+5. Authentication & User Management
+
+Technologies:
+	•	OAuth: Firebase/Auth0
+	•	RBAC (Role-Based Access Control): Enforce permissions based on user roles.
+
+Best Practices:
+	•	Session Management: Implement JWT with refresh tokens for persistent logins.
+	•	Multi-Factor Authentication (MFA): Enable for sensitive actions.
+	•	Password Hashing: Use bcrypt with proper salting.
+
+⸻
+
+6. Payment & Subscription Management
+
+Technologies:
+	•	Stripe, PayFast
+
+Best Practices:
+	•	Subscription Plans: Free-tier vs. paid AI-powered features.
+	•	Automated Billing: Webhooks for real-time transaction updates.
+	•	Invoice Management: Generate PDF invoices for payment records.
+
+⸻
+
+7. File Storage & Uploads
+
+Technologies:
+	•	AWS S3 (for reports and attachments)
+	•	Cloudinary (for image optimization)
+
+Best Practices:
+	•	Signed URLs: Prevent unauthorized access to sensitive files.
+	•	Compression: Reduce file sizes without loss of quality.
+	•	Versioning: Maintain different versions of reports.
+
+⸻
+
+8. Security Best Practices
+	•	CORS Policies: Restrict API access to trusted origins.
+	•	SQL Injection Prevention: Use parameterized queries.
+	•	XSS Protection: Sanitize user inputs.
+	•	HTTPS Enforcement: Ensure encrypted data transmission.
+	•	Content Security Policy (CSP): Prevent unauthorized script execution.
+
+⸻
+
+9. Monitoring & Logging
+
+Technologies:
+	•	Sentry (Error Tracking)
+	•	Datadog (Performance Monitoring)
+	•	LogRocket (Frontend Session Replay)
+
+Best Practices:
+	•	Real-Time Error Alerts: Detect issues before users report them.
+	•	Structured Logging: Use Winston or Pino for JSON logs.
+	•	Log Rotation & Retention: Archive old logs for compliance and analysis.
+
+⸻
+
+10. Deployment & CI/CD
+
+Technologies:
+	•	Frontend: Vercel (for automatic deployments)
+	•	Backend: AWS EC2 (for scalable API hosting)
+	•	Database: Supabase (for managed PostgreSQL)
+
+Best Practices:
+	•	GitHub Actions for CI/CD: Automate testing and deployment pipelines.
+	•	Feature Flagging: Gradually roll out new features with LaunchDarkly.
+	•	Zero-Downtime Deployment: Implement blue-green or rolling deployments.
+
+⸻
+
+Conclusion
+
+This guide ensures your AI-powered engineering SaaS is secure, scalable, and efficient. By following these principles, you can deliver high-quality reports, optimize AI interactions, and maintain strong user engagement.
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to

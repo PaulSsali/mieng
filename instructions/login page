@@ -1,0 +1,110 @@
+User Requirements & UI Specifications for eMate Login Page
+
+⸻
+
+User Requirements
+
+1. General Requirements
+	•	The system must provide a login page for users to securely access their eMate accounts.
+	•	The login page must be responsive, ensuring usability on desktop and mobile devices.
+	•	Users must be able to enter their email and password to authenticate.
+	•	A password visibility toggle must be available for user convenience.
+	•	Users must be able to navigate to the signup page if they do not have an account.
+	•	The system must allow users to recover their password via a “Forgot Password?” link.
+	•	After successful login, users must be redirected to the dashboard.
+	•	The page must comply with accessibility and security best practices.
+
+⸻
+
+2. Navigation & Header
+	•	The header must include:
+	•	The eMate logo (Award icon + “eMate” text).
+	•	A signup prompt (“Don’t have an account? Sign up”) with a link to the registration page.
+	•	The header must be minimalistic and not distract from the main login functionality.
+
+⸻
+
+3. Login Form
+	•	The form must contain:
+	•	Email field (required).
+	•	Password field (required) with a password visibility toggle (EyeIcon / EyeOffIcon).
+	•	A “Forgot Password?” link that redirects users to the password reset page.
+	•	A “Log In” button to submit credentials.
+	•	The form must validate inputs (e.g., required fields, valid email format).
+	•	Upon submission, the system must log the user in and redirect them to the dashboard.
+
+⸻
+
+4. Terms & Conditions Notice
+	•	Below the form, a notice must state:
+	•	“By logging in, you agree to our Terms of Service and Privacy Policy.”
+	•	Terms of Service and Privacy Policy must be clickable links.
+
+⸻
+
+5. Error Handling
+	•	If incorrect credentials are entered, an error message must be displayed.
+	•	Errors must be clear and descriptive (e.g., “Invalid email or password”).
+	•	The form must prevent multiple rapid submissions to avoid abuse.
+
+⸻
+
+UI Specifications
+
+Typography
+	•	Primary Font: Sans-serif (font-bold for titles, text-gray-500 for descriptions).
+	•	Heading Sizes:
+	•	text-2xl for “Log in to your account”.
+	•	text-sm for supporting text and links.
+	•	Paragraph Text: text-gray-500 md:text-base.
+
+⸻
+
+Colors
+	•	Primary Color: #0070f3 (used in buttons, links, and highlights).
+	•	Background Color: bg-gray-50 (for the login form section).
+	•	Text Color: text-gray-500 (descriptions), text-black (headings).
+	•	Input Borders: border-gray-300 focus:border-primary.
+
+⸻
+
+Buttons
+	•	Primary Button (Log In):
+	•	bg-primary text-white w-full px-6 py-3 rounded-lg hover:bg-primary-dark transition.
+	•	Ghost Button (Password Toggle):
+	•	bg-transparent text-gray-500 hover:bg-gray-100 rounded-full px-3 py-2.
+
+⸻
+
+Input Fields
+	•	Email & Password Fields:
+	•	border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-primary transition.
+	•	Password Field:
+	•	Must include a password visibility toggle button (EyeIcon or EyeOffIcon).
+
+⸻
+
+Layout & Spacing
+	•	Container: max-w-md mx-auto px-4 md:px-6 py-8.
+	•	Grid System:
+	•	Stacked layout (grid-cols-1) for mobile.
+	•	Centered layout on larger screens.
+
+⸻
+
+Responsive Behavior
+	•	Mobile (max-width: 400px):
+	•	Inputs and buttons must be full-width (w-full).
+	•	Navigation should remain simple and not take too much space.
+	•	Tablet (min-width: 768px):
+	•	Card layout centered with consistent margins.
+	•	Desktop (min-width: 1024px):
+	•	Form must remain compact with optimal whitespace for readability.
+
+⸻
+
+Conclusion
+
+The eMate login page provides a secure, user-friendly, and responsive interface, ensuring a smooth authentication process. The UI is designed to be intuitive, minimalistic, and accessible, supporting both new and returning users.
+
+Would you like any further refinements or additional features?

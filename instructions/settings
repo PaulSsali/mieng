@@ -1,0 +1,204 @@
+# Settings Page Analysis & Requirements
+
+Based on the provided code for the settings page, I'll analyze the current implementation and draft comprehensive requirements and UI specifications, including adding profile image functionality.
+
+## Current Implementation Analysis
+
+The settings page currently has:
+
+1. **Three main tabs** organized as:
+   - Account (profile information, password management, account actions)
+   - Preferences (notifications, appearance settings)
+   - Data & Privacy (privacy policy, data usage, account deletion)
+
+2. **Key functionality** includes:
+   - Updating profile information (name and email)
+   - Changing password
+   - Managing session and account actions
+   - Setting notification preferences
+   - Toggling dark mode
+   - Reviewing privacy settings and deleting account
+
+3. **Missing functionality**:
+   - Profile image upload and management
+   - User role information 
+   - Engineering discipline and experience settings
+   - ECSA registration progress tracking preferences
+   - Integration with authentication context
+
+## Requirements Specification
+
+### Functional Requirements
+
+1. **Profile Management**
+   - FR1.1: Users must be able to update their basic profile information (name, email)
+   - FR1.2: Users must be able to upload, view, and delete profile images
+   - FR1.3: When no profile image is available, system must display user initials based on name
+   - FR1.4: Users must be able to change their password with current password verification
+
+2. **Preferences Management**
+   - FR2.1: Users must be able to toggle email notifications
+   - FR2.2: Users must be able to toggle in-app notifications
+   - FR2.3: Users must be able to set notification frequency (real-time, daily, weekly, never)
+   - FR2.4: Users must be able to toggle dark/light mode
+   - FR2.5: Users must be able to customize dashboard view preferences
+
+3. **Privacy & Data Management**
+   - FR3.1: Users must be able to view the privacy policy
+   - FR3.2: Users must be able to control usage data collection
+   - FR3.3: Users must be able to delete their account with confirmation
+   - FR3.4: Users must be able to export their account data
+
+4. **Engineering Specific Settings**
+   - FR4.1: Users must be able to update their engineering discipline
+   - FR4.2: Users must be able to set their ECSA registration timeline goals
+   - FR4.3: Users must be able to specify their engineering experience level
+
+### Non-Functional Requirements
+
+1. **Performance**
+   - NFR1.1: Profile image upload must complete within 3 seconds
+   - NFR1.2: Settings changes must be applied within 1 second
+
+2. **Security**
+   - NFR2.1: Password changes must require current password verification
+   - NFR2.2: Profile images must be securely stored with appropriate access controls
+   - NFR2.3: All settings changes must be logged for audit purposes
+
+3. **Usability**
+   - NFR3.1: Profile image upload must support common formats (JPEG, PNG, GIF)
+   - NFR3.2: Settings interface must be responsive across desktop and mobile devices
+   - NFR3.3: Preference changes must provide immediate visual feedback
+
+## UI Specifications
+
+### Profile Image Component
+
+```tsx
+// Component: ProfileImageUpload
+// Location: Top of Profile Information card
+
+<div className="flex flex-col items-center space-y-3 mb-6">
+  <div className="relative h-24 w-24 group">
+    {profileImage ? (
+      <Image 
+        src={profileImage} 
+        alt="Profile" 
+        width={96} 
+        height={96} 
+        className="rounded-full object-cover w-24 h-24 border-2 border-primary/20"
+      />
+    ) : (
+      <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10 text-primary text-xl font-medium">
+        {getInitials(formData.fullName)}
+      </div>
+    )}
+    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={handleUploadClick} 
+        className="text-white h-10 w-10"
+      >
+        <Camera className="h-5 w-5" />
+      </Button>
+    </div>
+    <input 
+      type="file"
+      ref={fileInputRef}
+      onChange={handleFileChange}
+      accept="image/*"
+      className="hidden"
+    />
+  </div>
+  {profileImage && (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={handleRemoveImage} 
+      className="text-xs"
+    >
+      Remove Image
+    </Button>
+  )}
+</div>
+```
+
+### Updated Account Tab Structure
+
+```
+Account Tab
+├── Profile Section 
+│   ├── Profile Image Upload Component
+│   ├── Full Name Input
+│   ├── Email Input  
+│   ├── Engineering Discipline Select
+│   └── Experience Level Select
+│
+├── Password Section
+│   ├── Current Password Input
+│   ├── New Password Input
+│   └── Confirm Password Input
+│
+└── Account Actions Section
+    ├── Sign Out of All Sessions
+    └── Export Account Data
+```
+
+### New Engineering-Specific Tab
+
+```
+Engineering Profile Tab
+├── ECSA Registration Goals
+│   ├── Target Completion Date
+│   ├── Hours Per Week Commitment
+│   └── Mentor Availability Toggle
+│
+├── Report Preferences
+│   ├── Default Report Format
+│   ├── Auto-Save Frequency
+│   └── AI Assistance Level
+│
+└── Referee Management
+    ├── Default Referee Contact Method
+    └── Referee Notification Preferences
+```
+
+## Detailed UI Mockup Description
+
+1. **Profile Image Area**
+   - Circular image container (96x96px)
+   - Hover effect that reveals an upload icon button
+   - When no image is available, display circular background with user initials
+   - Small "Remove Image" button appears below when an image is set
+
+2. **Updated Account Information Card**
+   - Profile image centered at top of card
+   - Form fields for name and email below image
+   - Added select fields for engineering discipline and experience level
+   - Clean spacing between elements (16px vertical gap)
+
+3. **Responsive Considerations**
+   - On mobile: Stack cards vertically, full width
+   - On tablet and above: Two-column grid for account information and password cards
+   - Maintain consistent padding (16px on mobile, 24px on larger screens)
+
+## Implementation Recommendations
+
+1. **Profile Image Handling**
+   - Add a utility function for generating user initials from full name
+   - Implement secure image upload with client-side preview
+   - Add server-side validation for image types and sizes
+   - Implement image cropping functionality for consistent circular display
+
+2. **Integration with Auth Context**
+   - Initialize form data from user auth context
+   - Update user profile in both Firebase and database on save
+   - Implement proper error handling with toast notifications
+
+3. **User Experience Enhancements**
+   - Add loading states during save operations
+   - Implement form validation for email and password fields
+   - Add success confirmation feedback for saved settings
+
+This comprehensive plan ensures a user-friendly settings page that allows engineers to manage their profile effectively, including the new profile image functionality with proper fallback to initials when no image is available.

@@ -1,0 +1,161 @@
+Here are the user requirements and UI specifications for the eMate landing page based on the provided Next.js code:
+
+⸻
+
+User Requirements
+
+1. General Requirements
+	•	The system must provide a landing page for eMate with an intuitive and responsive UI.
+	•	The page must introduce AI-powered features for ECSA registration, including project tracking, report drafting, and CPD management.
+	•	The system must include a navigation bar for quick access to key sections.
+	•	The landing page must be SEO-friendly, fast, and optimized for desktop and mobile devices.
+	•	The system must allow users to sign up, log in, and explore features before registration.
+
+⸻
+
+2. Navigation & Header
+	•	The header must have a 16-pixel height and include:
+	•	Brand logo (Award icon + “eMate” text).
+	•	A navigation menu with links to:
+	•	Features
+	•	Pricing
+	•	Testimonials
+	•	A call-to-action section with:
+	•	Log In button (outline button).
+	•	Get Started button (primary button).
+	•	The navigation should be hidden on mobile and only displayed in larger screens (md and up).
+
+⸻
+
+3. Hero Section (Main Banner)
+	•	The hero section must contain:
+	•	A large, bold heading (text-3xl sm:text-5xl) with the tagline:
+	•	“Simplify Your ECSA Registration Journey”
+	•	A description (text-gray-500 md:text-xl) that explains key features.
+	•	Two buttons for navigation:
+	•	Get Started (size-lg, primary, includes right arrow icon).
+	•	Learn More (outline button).
+	•	A dashboard preview image (/dashboard-preview.png, 600x350px), placed in a gradient background box.
+	•	The section must be flexible and adaptive, with a grid layout for desktops (lg:grid-cols-2) and stacked layout on mobile.
+
+⸻
+
+4. Features Section
+	•	The section must have a centered heading (“Key Features”) and description.
+	•	Features must be displayed in a three-column grid (md:grid-cols-3) on desktop and single-column (grid-cols-1) on mobile.
+	•	Each feature must be inside a rounded bordered card (p-6 shadow-sm) with:
+	•	An icon inside a rounded background (bg-primary/10 p-3).
+	•	A title (text-xl font-bold).
+	•	A short description (text-center text-gray-500).
+	•	Key Features:
+	1.	AI Report Drafting (FileText Icon)
+	2.	Outcome Tracking (CheckCircle Icon)
+	3.	CPD Management (Calendar Icon)
+
+⸻
+
+5. Pricing Section
+	•	The section must have a two-column grid layout (md:grid-cols-2) on desktop.
+	•	Each pricing plan must be inside a rounded bordered card (p-6 shadow-sm).
+	•	The “Pro” plan should have a “Recommended” badge (absolute -top-3 right-4).
+	•	Plans:
+	•	Free Plan
+	•	R0 (Forever Free)
+	•	Includes:
+	•	Project experience logging
+	•	Basic outcome tracking
+	•	Limited CPD tracking
+	•	“Get Started” button (outline button).
+	•	Pro Plan
+	•	R299 per month
+	•	Includes:
+	•	Everything in Free
+	•	AI-powered report drafting
+	•	TER generation
+	•	Full CPD tracking
+	•	Referee management
+	•	PDF & Word exports
+	•	“Get Started” button (primary button).
+
+⸻
+
+6. Testimonials Section
+	•	Must include a centered heading (“What Engineers Say”).
+	•	Testimonials must be displayed in a two-column grid (md:grid-cols-2) on desktop.
+	•	Each testimonial must include:
+	•	User avatar (initials in rounded background).
+	•	User name & profession.
+	•	Review quote in gray text.
+
+⸻
+
+7. Call-to-Action (Final Section)
+	•	Large heading (text-3xl sm:text-4xl) inviting users to sign up.
+	•	“Get Started Today” button (primary, includes right arrow icon).
+
+⸻
+
+8. Footer
+	•	Must include:
+	•	eMate brand logo.
+	•	Links (Terms of Service, Privacy Policy).
+	•	Copyright notice.
+
+⸻
+
+UI Specifications
+
+Typography
+	•	Primary Font: Sans-serif (font-bold for titles, text-gray-500 for descriptions).
+	•	Heading Sizes:
+	•	text-5xl for Hero section title.
+	•	text-4xl for Section Titles.
+	•	text-xl for Feature Titles.
+	•	Paragraph Text: text-gray-500 md:text-xl.
+
+Colors
+	•	Primary Color: #0070f3 (used in buttons, icons, highlights).
+	•	Secondary Background: bg-gray-50 (for alternate sections).
+	•	Text Color: text-gray-500 (descriptions), text-black (headings).
+
+Buttons
+	•	Primary Button:
+	•	bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark.
+	•	flex items-center gap-1 (for icons).
+	•	Outline Button:
+	•	border border-gray-300 text-black px-6 py-3 rounded-lg hover:bg-gray-100.
+
+Grid & Layout
+	•	Containers: max-w-5xl mx-auto px-4 md:px-6.
+	•	Grid System:
+	•	grid-cols-1 on mobile.
+	•	md:grid-cols-2 for pricing/testimonials.
+	•	md:grid-cols-3 for features.
+
+⸻
+
+Performance & Optimization
+	•	Image Optimization: Use Next.js <Image> for responsive, fast-loading images.
+	•	Lazy Loading: Ensure images and assets load dynamically.
+	•	SEO Optimization: Include metadata, alt attributes, and structured navigation.
+
+⸻
+
+Responsive Behavior
+	•	Mobile (max-width: 400px):
+	•	Navigation menu hidden (hidden md:flex).
+	•	Sections stacked (grid-cols-1).
+	•	Buttons stacked (flex-col).
+	•	Tablet (min-width: 768px):
+	•	Navigation menu visible.
+	•	Grid layout (grid-cols-2, grid-cols-3).
+	•	Desktop (min-width: 1024px):
+	•	Full grid layout (lg:grid-cols-2, lg:grid-cols-3).
+
+⸻
+
+Conclusion
+
+The eMate landing page is a structured, responsive, and SEO-friendly UI that prioritizes usability and conversion. It effectively presents AI-powered features, pricing plans, and testimonials, guiding engineers through a seamless sign-up process.
+
+Would you like any additional details or modifications?

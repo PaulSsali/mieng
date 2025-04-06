@@ -1,0 +1,153 @@
+# Reports Page Analysis and UI Specifications
+
+Based on my analysis of the provided code, this is a feature-rich Reports page for an AI-powered engineering report tracking and drafting SaaS platform. Let me outline the requirements and UI specifications for this component.
+
+## Component Overview
+
+The code implements a comprehensive Reports management page with capabilities to view, search, filter, update, and export various types of engineering reports, including ECSA Outcomes reports, Training Experience Reports (TERs), and Technical reports.
+
+## Functional Requirements
+
+1. **Report Management**
+   - View all reports in a centralized dashboard
+   - Filter reports by status (All, Draft, Submitted, Approved)
+   - Search reports by title, description, or type
+   - Sort reports by date (newest/oldest) or title (A-Z/Z-A)
+   - Create new reports with AI assistance
+   - Update existing reports
+   - Export reports in various formats
+   - Preview report contents
+   - Submit draft reports for review
+
+2. **Report Classification**
+   - Support multiple report types (Outcomes, TER, Technical)
+   - Track report status (Draft, Submitted, Approved, Rejected)
+   - Identify AI-generated vs. manually created reports
+   - Display ECSA outcomes coverage
+
+3. **Report Information Display**
+   - Report title and description
+   - Creation and last updated dates
+   - Referee assignment status
+   - Associated projects
+   - ECSA outcomes coverage metrics
+
+## UI Specifications
+
+### Layout
+
+1. **Header Section**
+   - Main header with navigation (imported from MainHeader component)
+   - Page title "Reports"
+   - "Create New Report" button with sparkles icon
+
+2. **Controls Section**
+   - Search input with search icon
+   - Sort dropdown with options for date and title sorting
+   - Filter button (desktop view only)
+
+3. **Tabs Navigation**
+   - Four tabs: All Reports, Draft, Submitted, Approved
+   - Each tab shows filtered reports based on status
+
+4. **Reports Display**
+   - Grid layout of report cards
+   - Empty state messaging when no reports match criteria
+
+5. **Report Card**
+   - Two-column layout (responsive)
+   - Left section: Report details
+   - Right section: Action buttons
+   - Visual status indicators with appropriate icons
+
+### Report Card Components
+
+1. **Header Area**
+   - Report thumbnail image
+   - Report title
+   - Status badge with icon (color-coded)
+   - AI-generated badge when applicable
+
+2. **Description**
+   - Brief summary of report content
+
+3. **Metadata Grid**
+   - Report type
+   - Last updated date
+   - Referee information
+   - Creation date
+
+4. **ECSA Outcomes**
+   - Progress indicator (X of 11 covered)
+   - Numbered badges for each outcome covered
+
+5. **Action Buttons**
+   - Update button
+   - Export button
+   - Preview button
+   - Submit button (for draft reports only)
+
+### Modals
+
+1. **Update Report Modal**
+   - Opens when "Update" is clicked
+   - Contains form to edit report details
+
+2. **Export Report Modal**
+   - Opens when "Export" is clicked
+   - Provides export format options
+
+### Responsive Design
+
+- Flexible layout that adapts to desktop and mobile screens
+- Column stacking on smaller screens
+- Hidden filter button on mobile
+- Adjusted card layout for mobile viewing
+
+## Technical Implementation Details
+
+1. **State Management**
+   - Search query state
+   - Sort preference state
+   - Selected report state (for modals)
+   - Modal open/close states
+
+2. **Data Processing**
+   - Filtering logic based on search terms
+   - Sorting logic based on user preference
+   - Status-based filtering for tab content
+
+3. **Component Structure**
+   - Main ReportsPage component
+   - ReportCard component for individual report display
+   - UpdateReportModal and ExportReportModal components (imported)
+
+4. **UI Components**
+   - Uses ShadCN/UI components (Button, Card, Tabs, Badge, etc.)
+   - Lucide icons for visual elements
+   - Next.js Image component for optimized images
+
+## Enhancement Recommendations
+
+1. **Pagination or Infinite Scroll**
+   - Add pagination for large report collections
+
+2. **Advanced Filtering**
+   - Implement more robust filtering by date ranges, ECSA outcomes, and referees
+
+3. **Bulk Actions**
+   - Add capabilities to select multiple reports for batch operations
+
+4. **Report Analytics**
+   - Add visual charts for ECSA outcomes coverage across all reports
+
+5. **Drag-and-Drop Reordering**
+   - Allow users to prioritize reports via drag-and-drop
+
+6. **Collaborative Editing**
+   - Add indicators for reports being edited by team members
+
+7. **Notification System**
+   - Implement notifications for status changes and referee feedback
+
+This Reports page aligns well with the development philosophy outlined in your Cursor Rules, particularly the user-centric design principles and the frontend development practices using React.js, Next.js, and Tailwind CSS with ShadCN/UI components.

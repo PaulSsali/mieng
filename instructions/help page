@@ -1,0 +1,200 @@
+I'll analyze the code and create detailed requirements and UI specifications for this Help & Support page.
+
+### Requirements Specification
+
+#### 1. Functional Requirements
+
+**Search Functionality**
+- Users must be able to search through FAQs using a search bar
+- Search should filter both questions and answers in real-time
+- Empty search results should display a "No results found" message with option to clear search
+
+**FAQ System**
+- FAQs must be organized into categories:
+  - Account & Registration
+  - ECSA Registration
+  - Reports & Projects
+  - Billing & Subscription
+- Each category should be expandable/collapsible
+- Questions should be displayed in an accordion format
+
+**Live Chat Support**
+- Available only for Premium/Pro users
+- Real-time message exchange capability
+- Message history display with timestamps
+- Visual distinction between user and system messages
+- Non-premium users should see upgrade prompt
+
+**Ticket System**
+- Form fields required:
+  - Subject (required)
+  - Category selection (required)
+  - Description (required)
+  - File attachment (optional)
+- File attachment support for PDF, JPG, PNG, DOC, DOCX (max 5MB)
+- Form validation before submission
+- Success confirmation after submission
+
+**Support Information Display**
+- Contact information
+- Resource links
+- System status
+- Support level indication (Standard/Pro)
+
+#### 2. Non-Functional Requirements
+
+**Performance**
+- Real-time search filtering
+- Immediate message sending in chat
+- Quick form submission response
+
+**Accessibility**
+- ARIA labels for interactive elements
+- Keyboard navigation support
+- Screen reader compatibility
+
+**Responsiveness**
+- Mobile-friendly layout
+- Adaptive design for different screen sizes
+- Touch-friendly interface
+
+### UI Specifications
+
+#### 1. Layout Structure
+
+**Header Section**
+```
+- Page title: "Help & Support"
+- Back to Dashboard button (right-aligned)
+```
+
+**Search Hero Section**
+```
+- Gradient background
+- Two-column layout on desktop
+- Search bar with icon
+- Support illustration (hidden on mobile)
+```
+
+**Main Content Tabs**
+```
+- Three equal-width tabs:
+  - FAQ
+  - Live Chat
+  - Submit a Ticket
+```
+
+#### 2. Component Specifications
+
+**FAQ Section**
+```
+Card Layout:
+- Header with title and description
+- Categorized questions in accordion
+- Footer with alternative support options
+```
+
+**Live Chat Component**
+```
+Dimensions:
+- Fixed height: 400px
+- Message container: scrollable
+- Input area: fixed bottom
+
+Message Styling:
+- User messages: right-aligned, primary color
+- System messages: left-aligned, muted color
+- Timestamps: smaller font, reduced opacity
+```
+
+**Ticket Form**
+```
+Form Fields:
+- Subject: Single-line input
+- Category: Dropdown select
+- Description: Multi-line textarea (6 rows)
+- Attachment: Custom styled file input
+  - File name display
+  - Remove button
+```
+
+**Info Cards Grid**
+```
+Three-column grid:
+1. Contact Information
+   - Email, Phone, Hours
+2. Resources
+   - Links with hover underline
+3. Support Status
+   - Status indicator dot
+   - Response time
+   - Support level badge
+```
+
+#### 3. Style Specifications
+
+**Colors**
+```
+Primary:
+- Background: white
+- Accent: primary color (from theme)
+- Gradient: primary/20 to primary/5
+
+Status Colors:
+- Success: green-500
+- Muted: gray-500/600
+- Link: primary
+```
+
+**Typography**
+```
+Headings:
+- H1: 3xl, bold
+- H2: 2xl, bold
+- H3: lg, semibold
+
+Body Text:
+- Regular: sm
+- Description: text-gray-600
+- Timestamps: xs
+```
+
+**Spacing**
+```
+Container:
+- Padding: px-4 md:px-6
+- Gap between sections: gap-8
+
+Component Internal:
+- Card padding: p-6 md:p-8
+- Stack spacing: space-y-4
+```
+
+#### 4. Interactive States
+
+**Buttons**
+```
+Variants:
+- Primary: Solid background
+- Outline: Bordered
+- Link: Text only
+
+States:
+- Hover: Background shift
+- Active: Slight scale
+- Disabled: Reduced opacity
+```
+
+**Form Elements**
+```
+Input Fields:
+- Focus: Ring outline
+- Error: Red border
+- Disabled: Reduced opacity
+
+Accordion:
+- Hover: Background shift
+- Active: Expanded state
+```
+
+This specification provides a comprehensive guide for implementing the Help & Support page, ensuring consistency in functionality, layout, and user experience across the application.

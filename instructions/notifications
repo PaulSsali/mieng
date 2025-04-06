@@ -1,0 +1,130 @@
+Here’s a detailed breakdown of the requirements and UI specifications for the Notifications Page in your AI-powered engineering report tracking and drafting SaaS.
+
+⸻
+
+Requirements
+
+1. Functional Requirements
+	•	Display Notifications
+	•	Show a list of notifications categorized by type: Report, Project, CPD, Referee, System.
+	•	Display title, description, timestamp, and status (read/unread).
+	•	Show an icon and image based on the notification type.
+	•	Notification Filters & Search
+	•	Allow users to search for notifications using keywords.
+	•	Provide a filter dropdown to show:
+	•	All notifications
+	•	Unread only
+	•	Reports
+	•	Projects
+	•	CPD
+	•	Referees
+	•	System
+	•	Enable users to toggle between tabs for All, Unread, and Archive.
+	•	Notification Actions
+	•	Users can mark notifications as read/unread.
+	•	Users can mark all notifications as read.
+	•	Provide an option to archive notifications.
+	•	Users can disable specific types of notifications.
+	•	Navigation
+	•	Clicking on a notification should take the user to the relevant section (e.g., reports, projects).
+	•	Users can open a dropdown for more options (mark as read, archive, disable notifications).
+	•	Unread Count
+	•	Display the number of unread notifications at the top of the page.
+
+⸻
+
+2. Non-Functional Requirements
+	•	Performance
+	•	Ensure fast rendering of notifications using efficient state management.
+	•	Debounce search queries to optimize performance.
+	•	Accessibility
+	•	Ensure all UI elements have appropriate ARIA labels.
+	•	Maintain color contrast for readability.
+	•	Security
+	•	Ensure notifications are fetched securely from the backend.
+	•	Implement role-based access control (RBAC) so only authorized users can view certain notifications.
+	•	Scalability
+	•	The notification system should handle hundreds of notifications per user.
+	•	Consider implementing pagination if needed.
+
+⸻
+
+UI Specifications
+
+1. Layout
+	•	Two-column layout
+	•	Left: Filters, search, and tabs.
+	•	Right: Notification list.
+	•	Spacing & Alignment
+	•	Use 8px and 16px spacing for consistency.
+	•	Notifications should have a clear hierarchy (title, description, timestamp).
+	•	Card-Based UI
+	•	Each notification should be in a card format for clear separation.
+	•	Unread notifications should have a light background highlight.
+
+2. Components
+
+Header
+	•	Title: “Notifications”
+	•	Subtitle: Display unread count (You have X unread notifications).
+	•	Mark all as read button (disabled if no unread notifications).
+
+Search Bar
+	•	Input field with placeholder: “Search notifications…”
+	•	Icon: Search icon inside the input field.
+
+Filters
+	•	Dropdown (Filter by type)
+	•	Default selection: “All notifications”
+	•	Filter options:
+	•	All notifications
+	•	Unread only
+	•	Reports
+	•	Projects
+	•	CPD
+	•	Referees
+	•	System
+
+Notification List
+	•	Each notification card includes:
+	•	Icon: Based on notification type.
+	•	Image: Small thumbnail (project, report, CPD event, etc.).
+	•	Title: Bold, primary text.
+	•	Description: Secondary text, gray.
+	•	Timestamp: Small, gray text (relative time, e.g., “2 hours ago”).
+	•	Unread Indicator: Small colored dot for unread notifications.
+	•	Actions: “View details” and “Mark as read”.
+
+More Options (Dropdown)
+	•	Clicking the More (⋮) button opens a dropdown:
+	•	Mark as read/unread
+	•	Archive
+	•	Disable notifications like this
+
+3. Colors & Typography
+	•	Primary text color: #111827 (Dark gray)
+	•	Secondary text color: #6B7280 (Light gray)
+	•	Background for unread: #E5E7EB (Light grayish background)
+	•	Accent colors per notification type:
+	•	Reports: Blue (#3B82F6)
+	•	System: Purple (#8B5CF6)
+	•	CPD: Green (#10B981)
+	•	Projects: Amber (#F59E0B)
+	•	Referees: Indigo (#6366F1)
+
+4. Button Styles
+	•	Primary Action: Mark all as read
+	•	Variant: Outline
+	•	Disabled State: Grayed out if no unread notifications.
+	•	Secondary Actions: “View Details”, “Mark as Read”
+	•	Variant: Link
+	•	Hover State: Underlined
+
+⸻
+
+Next Steps
+	•	Do you want me to generate a Figma wireframe for this UI?
+	•	Would you like to add real-time notifications via WebSockets?
+	•	Should we store notifications in a database, or just manage them in the frontend for now?
+
+Let me know how you’d like to proceed! 🚀

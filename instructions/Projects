@@ -1,0 +1,163 @@
+I'll create a detailed requirements document for the Projects page and Add New Project functionality based on the provided code.
+
+# Projects Page & Project Management Requirements Document
+
+## 1. Overview
+This document outlines the UI specifications and requirements for the Projects page and Add New Project functionality in the engineering portfolio application.
+
+## 2. Projects Page Specifications
+
+### 2.1 Header Section
+- Main navigation header with consistent styling across the application
+- Page title "Projects" displayed prominently
+- "Add Project" button with plus icon in the top-right corner
+
+### 2.2 Search & Filter Bar
+#### Search Functionality
+- Search input field with search icon
+- Real-time filtering of projects based on:
+  - Project name
+  - Project description
+  - Engineering discipline
+
+#### View Controls
+- Toggle between Tile and List views
+- Visual indicators for active view mode
+- Filter button with dropdown (for desktop view)
+
+### 2.3 Project Status Tabs
+- Tab navigation with four categories:
+  1. All Projects
+  2. In Progress
+  3. Completed
+  4. Pending Review
+- Active tab indication
+- Automatic filtering of projects based on selected tab
+
+### 2.4 Project Display
+
+#### Tile View
+- Grid layout for projects
+- Each tile displays:
+  - Project image/placeholder
+  - Project name
+  - Brief description
+  - Status indicator
+  - Start and end dates
+  - Engineering discipline
+  - Role
+  - Company name
+  - Update button
+
+#### List View
+- Table-like layout showing:
+  - Project name
+  - Status
+  - Date range
+  - Discipline
+  - Role
+  - Actions column
+
+### 2.5 Empty States
+- Custom empty state illustration
+- Helpful message when no projects match search criteria
+- Suggestion to add new projects or modify search
+
+## 3. Add New Project Specifications
+
+### 3.1 Navigation
+- Back button to return to Projects page
+- Page title "Add New Project"
+
+### 3.2 Form Layout
+- Card-based layout with clear sections
+- Responsive design (single column on mobile, two columns on desktop where appropriate)
+
+### 3.3 Required Fields
+
+#### Basic Information
+- Project Name (text input)
+- Engineering Discipline (dropdown)
+  - Civil Engineering
+  - Mechanical Engineering
+  - Electrical Engineering
+  - Chemical Engineering
+  - Industrial Engineering
+  - Other
+
+#### Timeline
+- Start Date (date picker)
+- End Date (date picker)
+
+#### Role Information
+- Your Role (text input)
+- Company/Organization (text input)
+
+#### Project Details
+- Project Description (multi-line text area)
+- Character limit and formatting guidelines
+
+#### ECSA Outcomes
+- Multi-select checkboxes for 11 ECSA outcomes
+- Clear labeling and grouping
+- Two-column layout on desktop
+
+#### Referee Assignment
+- Dropdown to select existing referee
+- Option to add new referee
+- Current referee options:
+  - Robert Mkhize, Pr.Eng
+  - Lisa Naidoo, Pr.Eng
+
+### 3.4 Action Buttons
+- Cancel button (returns to Projects page)
+- Save Project button with save icon
+- Confirmation before canceling if form has changes
+
+## 4. Technical Requirements
+
+### 4.1 State Management
+- Form validation
+- Real-time search filtering
+- View mode persistence
+- Selected tab persistence
+
+### 4.2 Data Structure
+Project object should contain:
+```typescript
+{
+  id: number;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  status: "In Progress" | "Completed" | "Pending Review";
+  discipline: string;
+  role: string;
+  company: string;
+  outcomes: number[];
+  referee: string;
+  image: string;
+}
+```
+
+### 4.3 Responsive Design
+- Mobile-first approach
+- Breakpoints:
+  - Mobile: < 768px
+  - Tablet: 768px - 1024px
+  - Desktop: > 1024px
+
+### 4.4 Accessibility
+- ARIA labels for interactive elements
+- Keyboard navigation support
+- Clear focus states
+- Screen reader compatibility
+
+## 5. Error Handling
+- Form validation messages
+- Required field indicators
+- Error states for invalid inputs
+- Success/failure notifications for form submission
+
+This requirements document provides a comprehensive overview of the Projects page and Add New Project functionality. Implementation should follow the existing design system and component library while maintaining consistency with the overall application architecture.
