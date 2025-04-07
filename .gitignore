@@ -1,31 +1,49 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+package-lock.json
+!/yarn.lock
+test/node_modules
+.pnpm-store/
+.github/**/node_modules
+
+# testing
+/coverage
+.nyc_output
+
+# next.js
+/.next/
+.next
+/out/
+
 # build output
+/build
 dist
 !.github/actions/*/dist
-.next
 target
 packages/next/wasm/@next
 tarballs/
 packages/**/*.tgz
 .errors/
 
-# dependencies
-node_modules
-package-lock.json
-yarn.lock
-!/yarn.lock
-test/node_modules
-.pnpm-store/
-.github/**/node_modules
-
 # logs & pids
 *.log
 pids
 *.cpuprofile
 *.heapsnapshot
-
-# coverage
-.nyc_output
-coverage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # test output
 test/**/out*
@@ -45,8 +63,20 @@ test/traces
 examples/**/out
 examples/**/.env*.local
 
+# misc
+.DS_Store
+*.pem
 pr-stats.md
 test-timings.json
+
+# env files
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+/prisma/.env
 
 # Vercel
 .vercel

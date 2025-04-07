@@ -1,6 +1,9 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,37 +13,177 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Project {
-  id          String    @id @default(cuid())
+// User model
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  name              String?
+  profileImage      String?   
+  role              Role      @default(ENGINEER)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  reports           Report[]
+  reportFeedback    ReportFeedback[]
+  organizations     Organization[]
+  projects          Project[]
+  referees          Referee[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  ENGINEER
+}
+
+// Organization model
+model Organization {
+  id          String    @id @default(uuid())
   name        String
-  description String
-  startDate   DateTime
-  endDate     DateTime?
-  status      String
-  discipline  String
-  role        String
-  company     String
-  userId      String
+  description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  users       User[]
+  projects    Project[]
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Project model
+model Project {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime?
+  status          ProjectStatus @default(ACTIVE)
+  discipline      String?
+  role            String?
+  company         String?
+  image           String?
+  responsibilities String?
+  referee         String?
+  outcomes        ProjectOutcome[]
+  milestones      ProjectMilestone[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  reports         Report[]
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
 }
 
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  PENDING_REVIEW
+}
+
+// ProjectOutcome model for storing ECSA outcomes
+model ProjectOutcome {
+  id          String  @id @default(uuid())
+  outcomeId   Int
+  response    String?
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ProjectMilestone model for storing project milestones
+model ProjectMilestone {
+  id          String  @id @default(uuid())
+  title       String
+  date        DateTime
+  description String?
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Report model
+model Report {
+  id            String    @id @default(uuid())
+  title         String
+  content       String
+  aiGenerated   Boolean   @default(false)
+  status        ReportStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  author        User      @relation(fields: [authorId], references: [id])
+  authorId      String
+  project       Project   @relation(fields: [projectId], references: [id])
+  projectId     String
+  feedback      ReportFeedback[]
+  reportHistory ReportHistory[]
+  tags          Tag[]
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+// Report History for versioning
+model ReportHistory {
+  id          String    @id @default(uuid())
+  content     String
+  createdAt   DateTime  @default(now())
+  report      Report    @relation(fields: [reportId], references: [id])
+  reportId    String
+}
+
+// Report Feedback
+model ReportFeedback {
+  id          String    @id @default(uuid())
+  content     String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  report      Report    @relation(fields: [reportId], references: [id])
+  reportId    String
+}
+
+// Tags for categorizing reports
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  reports   Report[]
+}
+
+// AI Prompt Templates
+model AIPromptTemplate {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  template  String
+  purpose   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Vector Embeddings for semantic search
+model VectorEmbedding {
+  id            String    @id @default(uuid())
+  objectId      String    
+  objectType    String    // Can be 'report', 'feedback', etc.
+  embedding     String    // Serialized vector embedding
+  createdAt     DateTime  @default(now())
+}
+
+// Referee model
 model Referee {
-  id        String   @id @default(cuid())
-  name      String
-  title     String
-  company   String
-  email     String
-  phone     String?
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-} 
+  id          String    @id @default(uuid())
+  name        String
+  title       String
+  company     String
+  email       String
+  phone       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+}

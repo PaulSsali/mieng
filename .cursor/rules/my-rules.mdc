@@ -189,12 +189,10 @@ Best Practices:
 	•	Zero-Downtime Deployment: Implement blue-green or rolling deployments.
 
 ⸻
+dont download unneeded plugins
 
 Conclusion
 
 This guide ensures your AI-powered engineering SaaS is secure, scalable, and efficient. By following these principles, you can deliver high-quality reports, optimize AI interactions, and maintain strong user engagement.
 
-# Your rule content
 
-- You can @ files here
-- You can use markdown but dont have to

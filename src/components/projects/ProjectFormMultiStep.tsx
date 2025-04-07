@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
@@ -232,95 +232,143 @@ export function ProjectFormMultiStep({
         </div>
       </div>
 
-      {/* Form Steps Content */}
-      <Card className="p-8 shadow-sm border rounded-xl">
+      {/* Form Steps */}
+      <div className="mt-6">
         {currentStep === "basic-info" && (
           <BasicInfoStep 
             formData={formData} 
             updateFormData={updateFormData} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
           />
         )}
-        
+
         {currentStep === "timelines" && (
           <TimelinesStep 
             formData={formData} 
             updateFormData={updateFormData} 
           />
         )}
-        
+
         {currentStep === "role-info" && (
           <RoleInfoStep 
             formData={formData} 
             updateFormData={updateFormData} 
           />
         )}
-        
+
         {currentStep === "ecsa-outcomes" && (
           <ECSAOutcomesStep 
             formData={formData} 
             updateFormData={updateFormData} 
           />
         )}
-        
+
         {currentStep === "review" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold">Review Your Project</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
+          <div className="space-y-4">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Project Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-medium text-sm text-gray-500">Project Name</h3>
-                  <p className="font-medium">{formData.name}</p>
+                  <h4 className="text-sm font-medium text-gray-500">Project Name</h4>
+                  <p className="mt-1">{formData.name}</p>
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm text-gray-500">Engineering Discipline</h3>
-                  <p>{formData.discipline}</p>
+                  <h4 className="text-sm font-medium text-gray-500">Discipline</h4>
+                  <p className="mt-1">{formData.discipline}</p>
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm text-gray-500">Timeline</h3>
-                  <p>{formData.startDate} to {formData.endDate || 'Present'}</p>
+                  <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
+                  <p className="mt-1">{formData.startDate ? new Date(formData.startDate).toLocaleDateString() : 'Not set'}</p>
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm text-gray-500">Role & Company</h3>
-                  <p>{formData.role} at {formData.company}</p>
+                  <h4 className="text-sm font-medium text-gray-500">End Date</h4>
+                  <p className="mt-1">{formData.endDate ? new Date(formData.endDate).toLocaleDateString() : 'Ongoing'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Role</h4>
+                  <p className="mt-1">{formData.role}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Company</h4>
+                  <p className="mt-1">{formData.company}</p>
+                </div>
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium text-gray-500">Description</h4>
+                  <p className="mt-1">{formData.description}</p>
+                </div>
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium text-gray-500">Responsibilities</h4>
+                  <p className="mt-1">{formData.responsibilities}</p>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500">Description</h3>
-                  <p className="text-sm">{formData.description}</p>
+
+              {formData.milestones && formData.milestones.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Key Milestones</h4>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {formData.milestones.map((milestone, i) => (
+                      <li key={i} className="text-sm">
+                        <span className="font-medium">{milestone.title}</span>
+                        {milestone.date && (
+                          <span className="text-gray-600"> - {new Date(milestone.date).toLocaleDateString()}</span>
+                        )}
+                        {milestone.description && (
+                          <p className="text-gray-600 ml-2">{milestone.description}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500">Selected ECSA Outcomes</h3>
-                  <p>{formData.outcomes.length} outcomes selected</p>
+              )}
+
+              {formData.outcomes && formData.outcomes.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Selected ECSA Outcomes</h4>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {formData.outcomes.map(outcome => (
+                      <li key={outcome.id}>
+                        <div className="font-medium">Outcome {outcome.id}: {outcome.title}</div>
+                        {formData.outcomeResponses && formData.outcomeResponses[outcome.id] && (
+                          <p className="text-gray-600 ml-2">{formData.outcomeResponses[outcome.id]}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+              )}
+            </Card>
+            
+            {/* Warning for missing fields */}
+            {isMissingRequiredFields() && (
+              <div className="py-3 px-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+                <strong>Note:</strong> Some required fields are missing. Please go back and complete them before submitting.
               </div>
-            </div>
+            )}
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between mt-6 pt-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={currentStep === "basic-info" ? onCancel : goToPreviousStep}
-          disabled={isSubmitting}
-          className="px-6"
-        >
-          {currentStep === "basic-info" ? "Cancel" : "Back"}
-        </Button>
+      <div className="flex justify-between pt-4">
+        {currentStep === "basic-info" ? (
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={goToPreviousStep} disabled={isSubmitting}>
+            Back
+          </Button>
+        )}
         
         <Button 
-          type="button" 
-          onClick={currentStep === "review" ? handleSubmit : goToNextStep}
-          disabled={isSubmitting || (currentStep === "review" && isMissingRequiredFields())}
-          className="px-6"
+          onClick={goToNextStep} 
+          disabled={isSubmitting}
         >
-          {currentStep === "review" ? (isSubmitting ? "Submitting..." : "Submit") : "Continue"}
-          {currentStep === "review" && isMissingRequiredFields() && " (Complete required fields)"}
+          {currentStep === "review" ? (
+            isSubmitting ? "Submitting..." : "Submit Project"
+          ) : (
+            "Continue"
+          )}
         </Button>
       </div>
     </div>
