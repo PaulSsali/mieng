@@ -1,51 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { getAuth } from 'firebase-admin/auth';
-import { initAdmin } from '@/lib/firebase-admin';
-
-// Initialize Firebase Admin if not already initialized
-initAdmin();
-
-const prisma = new PrismaClient();
+import { getAuth as getFirebaseAuthAdmin } from '@/lib/firebase-admin';
+import prisma from '@/lib/db/client';
+import { SubscriptionStatus } from '@prisma/client'; // Import enum
 
 // GET endpoint to retrieve a user's profile
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    // Get the Firebase ID token from the Authorization header
-    const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
+    // 1. Verify Firebase Auth Token
+    const authorization = req.headers.get('Authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+      return NextResponse.json({ message: 'Missing or invalid Authorization header' }, { status: 401 });
+    }
+    const idToken = authorization.split('Bearer ')[1];
     if (!idToken) {
-      return NextResponse.json({ error: 'No authorization token provided' }, { status: 401 });
+      return NextResponse.json({ message: 'Missing token' }, { status: 401 });
     }
 
-    // Verify the Firebase ID token
-    const decodedToken = await getAuth().verifyIdToken(idToken);
-    const email = decodedToken.email;
-
-    if (!email) {
-      return NextResponse.json({ error: 'No email found in token' }, { status: 400 });
+    let decodedToken;
+    try {
+      const firebaseAuth = getFirebaseAuthAdmin();
+      decodedToken = await firebaseAuth.verifyIdToken(idToken);
+    } catch (error) {
+      console.error('Firebase token verification failed:', error);
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Find user by email
-    const userProfile = await prisma.user.findUnique({
-      where: { email }
+    const firebaseUserEmail = decodedToken.email;
+    if (!firebaseUserEmail) {
+      return NextResponse.json({ message: 'Email missing from token' }, { status: 400 });
+    }
+
+    // 2. Find User in DB by Email
+    const user = await prisma.user.findUnique({
+      where: { email: firebaseUserEmail },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        subscriptionStatus: true,
+        subscriptionEndDate: true,
+        // Select other fields you might need on the profile/settings page
+      },
     });
 
-    // If user doesn't exist in our database but exists in Firebase Auth
-    if (!userProfile) {
-      // Get the user from Firebase Auth
-      const firebaseUser = await getAuth().getUserByEmail(email);
-
-      return NextResponse.json({
-        email: firebaseUser.email,
-        name: firebaseUser.displayName,
-        profileImage: firebaseUser.photoURL
-      });
+    if (!user) {
+      console.error('User not found in database for email:', firebaseUserEmail);
+      return NextResponse.json({ message: 'User profile not found' }, { status: 404 });
     }
 
-    return NextResponse.json(userProfile);
-  } catch (error) {
-    console.error('Error getting user profile:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // 3. Return User Profile Data
+    return NextResponse.json(user);
+
+  } catch (error: any) {
+    console.error('[API /user/profile] Error:', error);
+    return NextResponse.json(
+      { message: `Internal Server Error: ${error.message || 'Unknown error'}` }, 
+      { status: 500 }
+    );
   }
 }
 
@@ -59,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the Firebase ID token
-    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const decodedToken = await getFirebaseAuthAdmin().verifyIdToken(idToken);
     const email = decodedToken.email;
 
     if (!email) {

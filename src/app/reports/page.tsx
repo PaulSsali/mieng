@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import useSWR from 'swr';
 import {
   AlertCircle,
   ArrowUpDown,
@@ -20,7 +21,7 @@ import {
   Layers,
   Copy,
   Share,
-  Trash
+  Trash2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,7 @@ import { UpdateReportModal } from "@/components/update-report-modal"
 import { ExportReportModal } from "@/components/export-report-modal"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { GenerateReportDialog } from "@/components/reports/GenerateReportDialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Report type definition
 interface Report {
@@ -63,6 +65,21 @@ interface Report {
   }[];
 }
 
+// Fetcher function that accepts auth token
+const fetcher = async ([url, token]: [string, string]) => {
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch data');
+  }
+  
+  return response.json();
+};
+
 export default function ReportsPage() {
   const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
@@ -71,37 +88,30 @@ export default function ReportsPage() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false)
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Fetch reports from API
+  const [authToken, setAuthToken] = useState<string | null>(null)
+  
+  // Get auth token when user changes
   useEffect(() => {
-    async function fetchReports() {
-      if (!user) return;
-
-      try {
-        setLoading(true);
-        const response = await fetch('/api/reports');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch reports');
+    const getToken = async () => {
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          setAuthToken(token);
+        } catch (error) {
+          console.error("Failed to get auth token:", error);
         }
-        
-        const data = await response.json();
-        setReports(data || []);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching reports:', err);
-        setError('Failed to load reports. Please try again later.');
-        setReports([]);
-      } finally {
-        setLoading(false);
       }
-    }
+    };
     
-    fetchReports();
+    getToken();
   }, [user]);
+
+  // Fetch reports using useSWR with polling every 5 seconds
+  const { data: reports = [], error, isLoading } = useSWR<Report[]>(
+    user && authToken ? ['/api/reports', authToken] : null,
+    fetcher,
+    { refreshInterval: 5000 } // Poll every 5 seconds
+  );
 
   // Filter reports based on search query
   const filteredReports = reports.filter(
@@ -172,13 +182,32 @@ export default function ReportsPage() {
     }
   }
 
+  // --- Helper function to format date ---
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+  // --- End Helper function ---
+
   return (
     <DashboardLayout>
       <main className="py-8">
         <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h1 className="text-3xl font-bold">Reports</h1>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold flex items-center gap-2">
+                  <FileText className="h-7 w-7" />
+                  Reports
+                </h1>
+                <p className="text-muted-foreground text-sm flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  Manage and generate AI-powered engineering reports.
+                </p>
+              </div>
               <Button className="w-full md:w-auto" onClick={() => setIsGenerateModalOpen(true)}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 Create New Report
@@ -215,12 +244,32 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {loading ? (
-              <div className="flex justify-center py-10">Loading reports...</div>
-            ) : error ? (
-              <div className="p-4 bg-red-50 text-red-600 rounded-md">{error}</div>
-            ) : sortedReports.length > 0 ? (
+            {isLoading ? (
               <div className="grid gap-4">
+                {[...Array(3)].map((_, index) => (
+                  <Card key={index} className="bg-white dark:bg-gray-950 shadow-sm rounded-lg overflow-hidden">
+                    <CardHeader className="p-4 border-b border-gray-200 dark:border-gray-800">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/4 mt-1" />
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </CardContent>
+                    <CardFooter className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Failed to load reports. Please try again later. Error: {error.message}</span>
+              </div>
+            ) : sortedReports.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
                 {sortedReports.map((report) => (
                   <ReportCard
                     key={report.id}
@@ -269,73 +318,92 @@ interface ReportCardProps {
 }
 
 function ReportCard({ report, getStatusBadge, onUpdateClick, onExportClick }: ReportCardProps) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-          <div className="space-y-3 flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <h3 className="font-semibold text-lg">{report.title}</h3>
-              {getStatusBadge(report.status)}
-            </div>
-            <p className="text-gray-500 line-clamp-2">{report.description}</p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {new Date(report.updatedAt).toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <Layers className="h-4 w-4" />
-                {report.projects.length} {report.projects.length === 1 ? "project" : "projects"}
-              </span>
-              <span className="flex items-center gap-1">
-                <FileText className="h-4 w-4" />
-                {report.type}
-              </span>
+    <Card className="bg-card shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
+      <CardHeader className="p-4 border-b bg-gradient-to-br from-muted/30 to-muted/10">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1">
+            <CardTitle className="text-lg font-semibold leading-tight">{report.title}</CardTitle>
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <Layers className="h-4 w-4" />
+              <span>{report.type}</span>
             </div>
           </div>
-          <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => onUpdateClick(report)}>
-              <Edit className="h-4 w-4 mr-2" />
-              <span className="sm:hidden md:inline">Update</span>
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => onExportClick(report)}>
-              <Download className="h-4 w-4 mr-2" />
-              <span className="sm:hidden md:inline">Export</span>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Preview
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2">
-                  <Send className="h-4 w-4" />
-                  Submit
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2">
-                  <Copy className="h-4 w-4" />
-                  Duplicate
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2">
-                  <Share className="h-4 w-4" />
-                  Share
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center gap-2 text-red-600">
-                  <Trash className="h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {getStatusBadge(report.status)}
         </div>
+      </CardHeader>
+
+      <CardContent className="p-5 flex-grow space-y-3">
+        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+          {report.description || "No description provided."}
+        </p>
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>Last Updated: {formatDate(report.updatedAt)}</span>
+        </div>
+        {report.projects && report.projects.length > 0 && (
+          <div className="pt-2">
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Associated Projects:</h4>
+            <div className="flex flex-wrap gap-1">
+              {report.projects.map(project => (
+                <Badge key={project.id} variant="secondary" className="text-xs">
+                  {project.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
+
+      <CardFooter className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
+        <Link href={`/reports/${report.id}`} passHref>
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <Eye className="h-4 w-4" />
+            View
+          </Button>
+        </Link>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">Report Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onUpdateClick(report)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Update
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onExportClick(report)}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Eye className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Share className="mr-2 h-4 w-4" />
+              Share
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive hover:!bg-destructive/10 hover:!text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardFooter>
     </Card>
   )
 }
@@ -346,22 +414,16 @@ interface ReportsEmptyStateProps {
 
 function ReportsEmptyState({ onCreateClick }: ReportsEmptyStateProps) {
   return (
-    <Card className="p-6 flex flex-col items-center justify-center py-16 text-center">
-      <div className="flex flex-col items-center max-w-md">
-        <div className="relative w-20 h-20 mb-6">
-          <div className="absolute inset-0 rounded-full bg-primary/10 flex items-center justify-center">
-            <FileText className="h-10 w-10 text-primary" />
-          </div>
-        </div>
-        <h3 className="text-xl font-semibold mb-2">No reports yet</h3>
-        <p className="text-gray-500 mb-6">
-          Create your first report using our AI engine to generate professional reports based on your projects and engineering experience.
-        </p>
-        <Button size="lg" onClick={onCreateClick}>
-          <Sparkles className="mr-2 h-5 w-5" />
-          Create New Report
-        </Button>
-      </div>
-    </Card>
+    <div className="flex flex-col items-center justify-center text-center py-16 px-6 border border-dashed rounded-lg bg-muted/30">
+      <Sparkles className="h-16 w-16 text-purple-400 mb-4" />
+      <h3 className="text-xl font-semibold mb-2">No Reports Found</h3>
+      <p className="text-muted-foreground mb-6 max-w-md">
+        Ready to streamline your ECSA reporting? Use our AI assistant to generate professional reports in minutes.
+      </p>
+      <Button onClick={onCreateClick}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Generate Your First Report
+      </Button>
+    </div>
   )
 } 

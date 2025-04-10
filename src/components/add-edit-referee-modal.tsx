@@ -195,20 +195,26 @@ export function AddEditRefereeModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Position</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Position <span className="text-red-600">*</span>
+                  </label>
                   <Input
                     name="position"
                     value={values.position}
                     onChange={handleChange}
                     placeholder="e.g. Senior Engineer"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Company/Organization</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Company/Organization <span className="text-red-600">*</span>
+                  </label>
                   <Input
                     name="company"
                     value={values.company}
                     onChange={handleChange}
+                    required
                   />
                 </div>
               </div>

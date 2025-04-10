@@ -325,11 +325,11 @@ export function ProjectFormMultiStep({
                 <div className="mt-6">
                   <h4 className="text-sm font-medium text-gray-500 mb-2">Selected ECSA Outcomes</h4>
                   <ul className="list-disc pl-5 space-y-2">
-                    {formData.outcomes.map(outcome => (
-                      <li key={outcome.id}>
-                        <div className="font-medium">Outcome {outcome.id}: {outcome.title}</div>
-                        {formData.outcomeResponses && formData.outcomeResponses[outcome.id] && (
-                          <p className="text-gray-600 ml-2">{formData.outcomeResponses[outcome.id]}</p>
+                    {formData.outcomes.map(outcomeId => (
+                      <li key={outcomeId}>
+                        <div className="font-medium">Outcome {outcomeId}</div>
+                        {formData.outcomeResponses && formData.outcomeResponses[outcomeId] && (
+                          <p className="text-gray-600 ml-2">{formData.outcomeResponses[outcomeId]}</p>
                         )}
                       </li>
                     ))}

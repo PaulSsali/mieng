@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { getAuth } from 'firebase-admin/auth';
-import { initAdmin, hasAdminAuth } from '@/lib/firebase-admin';
+import { getAuth } from '@/lib/firebase-admin';
+import { Role } from '@prisma/client';
+import { ApiError, ApiErrorType, createAuthenticationError } from '@/lib/api-error-handler';
+import { withErrorHandling } from '@/lib/api-error-handler';
 
-// Initialize Firebase Admin if not already initialized
-const adminInitialized = initAdmin();
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isLocalAuthMode = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH === 'true';
 
@@ -32,12 +32,8 @@ async function getAuthenticatedUserId(req: NextRequest): Promise<string | null> 
       return await getOrCreateDevUser("test@example.com", "Test User");
     }
     
-    // Check if Admin SDK is ready
-    const isAdminSdkReady = hasAdminAuth();
-    console.log(`[AuthCheck Dashboard] Firebase Admin SDK Ready: ${isAdminSdkReady}`);
-    
-    // If we have a token and Admin SDK is ready, verify it with Firebase
-    if (idToken && isAdminSdkReady) {
+    // If we have a token, verify it with Firebase using getAuth()
+    if (idToken) { 
       try {
         console.log('[AuthCheck Dashboard] Verifying Firebase token...');
         const decodedToken = await getAuth().verifyIdToken(idToken);
@@ -64,14 +60,16 @@ async function getAuthenticatedUserId(req: NextRequest): Promise<string | null> 
         }
       } catch (error) {
         console.error('[AuthCheck Dashboard] Error verifying Firebase token:', error);
+        // Only fail hard in production if token verification fails
+        if (!isDevelopment) { 
+           return null;
+        }
       }
-    } else if (!isAdminSdkReady) {
-       console.warn('[AuthCheck Dashboard] Skipping token verification because Admin SDK is not ready.');
-    }
+    } 
     
     // Fallback for development - use a real test user instead of "default-user-id"
     if (isDevelopment) {
-      console.warn('[AuthCheck Dashboard] Falling back to test user for development.');
+      console.warn('[AuthCheck Dashboard] Falling back to test user for development (after potential token failure).');
       return await getOrCreateDevUser("nylah@example.com", "Nylah Test");
     }
     
@@ -108,7 +106,7 @@ async function createUserInDb(email: string, name: string): Promise<string> {
       data: {
         email,
         name,
-        role: 'ENGINEER'
+        role: Role.ENGINEER
       }
     });
 
@@ -146,173 +144,163 @@ interface RefereeType {
   company: string;
 }
 
-export async function GET(req: NextRequest) {
+// Rename the main logic function to avoid conflict with export
+async function handleGetDashboardData(req: NextRequest) {
   console.log('[GET /api/dashboard] Received request');
+  let userId;
   try {
-    const userId = await getAuthenticatedUserId(req);
-    console.log(`[GET /api/dashboard] Authenticated User ID: ${userId}`);
+    // Authenticate user
+    console.log('[GET /api/dashboard] Attempting authentication...');
+    userId = await getAuthenticatedUserId(req);
+    console.log(`[GET /api/dashboard] Authentication successful. User ID: ${userId}`);
     
     if (!userId) {
       console.warn('[GET /api/dashboard] Unauthorized - No User ID found');
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      // Use ApiError for consistency
+      throw createAuthenticationError(); 
     }
+  } catch (authError) {
+    console.error('[GET /api/dashboard] Authentication failed:', authError);
+    throw authError instanceof ApiError ? authError : createAuthenticationError('Authentication failed');
+  }
     
-    // Get the 3 most recent projects
-    let recentProjects: ProjectType[] = [];
-    try {
-      console.log(`[GET /api/dashboard] Fetching projects for userId: ${userId}`);
-      const projects = await prisma.project.findMany({
-        where: {
-          userId: userId
-        },
-        orderBy: {
-          updatedAt: 'desc'
-        },
-        take: 3,
-        select: {
-          id: true,
-          name: true,
-          startDate: true,
-          endDate: true,
-          discipline: true,
-          outcomes: true  // This will include all outcome responses for the project
-        }
-      });
-      console.log(`[GET /api/dashboard] Found ${projects.length} projects`);
-      
-      // Map database results to our ProjectType interface
-      recentProjects = projects as ProjectType[];
-    } catch (projectsError) {
-      console.error("[GET /api/dashboard] Error fetching recent projects:", projectsError);
-      recentProjects = [];
-    }
-    
-    // Get total completed projects count (for now just count all projects)
-    let projectCount = 0;
-    try {
-      projectCount = await prisma.project.count({
-        where: {
-          userId: userId
-        }
-      });
-      console.log(`[GET /api/dashboard] Total project count for user: ${projectCount}`);
-    } catch (countError) {
-      console.error("[GET /api/dashboard] Error counting projects:", countError);
-      projectCount = 0;
-    }
-    
-    // Get referees from the database
-    let referees: RefereeType[] = [];
-    try {
-      referees = await prisma.referee.findMany({
-        where: {
-          userId: userId
-        },
-        orderBy: {
-          updatedAt: 'desc'
-        },
-        take: 3,
-        select: {
-          id: true,
-          name: true,
-          title: true,
-          company: true
-        }
-      });
-    } catch (refError) {
-      console.error("Error fetching referees:", refError);
-      referees = [];
-    }
-    
-    // Check if this is a first-time user
-    let isFirstVisit = false;
-    try {
-      // Get the user from the database
-      const user = await prisma.user.findFirst({
-        where: {
-          id: userId
-        },
-        select: {
-          createdAt: true
-        }
-      });
-      
-      if (user) {
-        // Consider a user as new if created within the last hour
-        const creationTime = new Date(user.createdAt);
-        const now = new Date();
-        const timeDiffMs = now.getTime() - creationTime.getTime();
-        const oneHourInMs = 60 * 60 * 1000;
-        
-        isFirstVisit = timeDiffMs < oneHourInMs;
+  let recentProjects: ProjectType[] = [];
+  let projectCount = 0;
+  let referees: RefereeType[] = [];
+  let isFirstVisit = false;
+
+  // Fetch data within separate try/catch blocks
+  try {
+    console.log(`[GET /api/dashboard] Fetching recent projects for userId: ${userId}`);
+    recentProjects = await prisma.project.findMany({
+      where: { userId: userId },
+      orderBy: { updatedAt: 'desc' },
+      take: 3,
+      select: {
+        id: true,
+        name: true,
+        startDate: true,
+        endDate: true,
+        discipline: true,
+        outcomes: true
       }
-    } catch (userError) {
-      console.error("Error checking user creation time:", userError);
-    }
+    }) as ProjectType[];
+    console.log(`[GET /api/dashboard] Found ${recentProjects.length} recent projects`);
+  } catch (projectsError) {
+    console.error("[GET /api/dashboard] Error fetching recent projects:", projectsError);
+    // Don't throw yet, allow other data to load if possible
+  }
     
-    // Transform data for the dashboard
-    try {
-      const transformedProjects = recentProjects.map(project => ({
-        id: project.id,
-        title: project.name,  // Map name to title for the frontend
-        dateRange: formatDateRange(project.startDate, project.endDate),
-        discipline: project.discipline || "Other Engineering",
-        outcomes: project.outcomes.map(outcome => outcome.outcomeId)  // Extract just the outcomeId numbers
-      }));
-      
-      // Calculate ECSA outcomes coverage (example: 11 outcomes total)
-      const totalOutcomes = 11;
-      const uniqueOutcomes = new Set<number>();
-      
-      // Collect all unique outcomes from all projects
-      recentProjects.forEach(project => {
-        project.outcomes.forEach(outcome => {
-          uniqueOutcomes.add(outcome.outcomeId);
-        });
-      });
-      
-      const completedOutcomes = uniqueOutcomes.size;
-      const outcomePercentage = Math.round((completedOutcomes / totalOutcomes) * 100);
-      
-      // Calculate project experience duration in years and months
-      const totalExperienceMonths = calculateProjectDurationInMonths(recentProjects);
-      const years = Math.floor(totalExperienceMonths / 12);
-      const months = totalExperienceMonths % 12;
-      const durationString = `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
-      
-      // Calculate experience percentage (assuming 36 months / 3 years is 100%)
-      const experiencePercentage = Math.min(100, Math.round((totalExperienceMonths / 36) * 100));
-      
-      return NextResponse.json({
-        progressData: {
-          ecsa: {
-            completed: completedOutcomes,
-            total: totalOutcomes,
-            percentage: outcomePercentage
-          },
-          projects: {
-            count: projectCount,
-            duration: durationString,
-            percentage: experiencePercentage
-          }
-        },
-        recentProjects: transformedProjects,
-        referees: referees,
-        isFirstVisit: isFirstVisit
-      });
-    } catch (transformError) {
-      console.error("Error transforming data:", transformError);
-      return NextResponse.json({
-        error: "Failed to process dashboard data"
-      }, { status: 500 });
+  try {
+    console.log(`[GET /api/dashboard] Counting projects for userId: ${userId}`);
+    projectCount = await prisma.project.count({
+      where: { userId: userId }
+    });
+    console.log(`[GET /api/dashboard] Total project count: ${projectCount}`);
+  } catch (countError) {
+    console.error("[GET /api/dashboard] Error counting projects:", countError);
+    // Don't throw yet
+  }
+    
+  try {
+    console.log(`[GET /api/dashboard] Fetching referees for userId: ${userId}`);
+    referees = await prisma.referee.findMany({
+      where: { userId: userId },
+      orderBy: { updatedAt: 'desc' },
+      take: 3,
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        company: true
+      }
+    });
+    console.log(`[GET /api/dashboard] Found ${referees.length} referees`);
+  } catch (refError) {
+    console.error("[GET /api/dashboard] Error fetching referees:", refError);
+     // Don't throw yet
+  }
+    
+  try {
+    console.log(`[GET /api/dashboard] Checking if user is first visit for userId: ${userId}`);
+    const user = await prisma.user.findFirst({
+      where: { id: userId },
+      select: { createdAt: true }
+    });
+    
+    if (user) {
+      const creationTime = new Date(user.createdAt);
+      const now = new Date();
+      const timeDiffMs = now.getTime() - creationTime.getTime();
+      const oneHourInMs = 60 * 60 * 1000;
+      isFirstVisit = timeDiffMs < oneHourInMs;
+      console.log(`[GET /api/dashboard] isFirstVisit: ${isFirstVisit}`);
+    } else {
+      console.warn(`[GET /api/dashboard] User not found for isFirstVisit check, userId: ${userId}`);
     }
-  } catch (error) {
-    console.error("[GET /api/dashboard] Dashboard API error:", error);
-    return NextResponse.json({
-      error: "Internal server error"
-    }, { status: 500 });
+  } catch (userError) {
+    console.error("[GET /api/dashboard] Error checking user creation time:", userError);
+     // Don't throw yet
+  }
+    
+  // Transform data (wrap this in try/catch as well)
+  try {
+    console.log('[GET /api/dashboard] Transforming fetched data...');
+    const transformedProjects = recentProjects.map(project => ({
+      id: project.id,
+      title: project.name, 
+      dateRange: formatDateRange(project.startDate, project.endDate),
+      discipline: project.discipline || "Other Engineering",
+      outcomes: project.outcomes?.map(outcome => outcome.outcomeId) || [] // Safer mapping
+    }));
+    
+    const totalOutcomes = 11;
+    const uniqueOutcomes = new Set<number>();
+    recentProjects.forEach(project => {
+      project.outcomes?.forEach(outcome => { // Safer iteration
+        uniqueOutcomes.add(outcome.outcomeId);
+      });
+    });
+    
+    const completedOutcomes = uniqueOutcomes.size;
+    const outcomePercentage = totalOutcomes > 0 ? Math.round((completedOutcomes / totalOutcomes) * 100) : 0;
+    
+    const totalExperienceMonths = calculateProjectDurationInMonths(recentProjects);
+    const years = Math.floor(totalExperienceMonths / 12);
+    const months = totalExperienceMonths % 12;
+    const durationString = `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
+    
+    const experiencePercentage = Math.min(100, Math.round((totalExperienceMonths / 36) * 100));
+    
+    const responsePayload = {
+      progressData: {
+        ecsa: {
+          completed: completedOutcomes,
+          total: totalOutcomes,
+          percentage: outcomePercentage
+        },
+        projects: {
+          count: projectCount,
+          duration: durationString,
+          percentage: experiencePercentage
+        }
+      },
+      recentProjects: transformedProjects,
+      referees: referees,
+      isFirstVisit: isFirstVisit
+    };
+
+    console.log('[GET /api/dashboard] Data transformation complete. Sending response.');
+    return NextResponse.json(responsePayload);
+
+  } catch (transformError) {
+    console.error("[GET /api/dashboard] Error transforming data:", transformError);
+    throw new ApiError('Failed to process dashboard data', ApiErrorType.INTERNAL_SERVER_ERROR, transformError);
   }
 }
+
+// Export the GET handler wrapped with error handling
+export const GET = withErrorHandling(handleGetDashboardData);
 
 // Helper function to format date range as a string
 function formatDateRange(startDate: Date | null, endDate: Date | null): string {

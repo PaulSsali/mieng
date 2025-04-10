@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProjects, createProject } from '@/lib/db/project-service';
-import { withErrorHandling, createAuthenticationError } from '@/lib/api-error-handler';
-import { hasAdminAuth } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
-import { initAdmin } from '@/lib/firebase-admin';
+import { withErrorHandling, createAuthenticationError, ApiError, ApiErrorType } from '@/lib/api-error-handler';
+import { getAuth } from '@/lib/firebase-admin';
 import prisma from '@/lib/db/client';
 
 // Check for local development mode
 const isLocalAuthMode = process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH === 'true';
 const isDevelopment = process.env.NODE_ENV === 'development';
-
-// Make sure Firebase Admin is initialized
-initAdmin();
 
 // This is an improved auth check that supports local development mode
 async function getAuthenticatedUserId(req: NextRequest): Promise<string | null> {
@@ -37,12 +32,8 @@ async function getAuthenticatedUserId(req: NextRequest): Promise<string | null> 
       return await getOrCreateDevUser("test@example.com", "Test User");
     }
     
-    // Check if Admin SDK is ready
-    const isAdminSdkReady = hasAdminAuth();
-    console.log(`[AuthCheck] Firebase Admin SDK Ready: ${isAdminSdkReady}`);
-    
-    // If we have a token and Admin SDK is ready, verify it with Firebase
-    if (idToken && isAdminSdkReady) {
+    // If we have a token, verify it with Firebase using getAuth()
+    if (idToken) {
       try {
         console.log('[AuthCheck] Verifying Firebase token...');
         const decodedToken = await getAuth().verifyIdToken(idToken);
@@ -69,14 +60,17 @@ async function getAuthenticatedUserId(req: NextRequest): Promise<string | null> 
         }
       } catch (error) {
         console.error('[AuthCheck] Error verifying Firebase token:', error);
+        // If token verification fails, don't fall through, throw an error or return null
+        // Depending on whether dev fallback is desired here or handled later
+        if (!isDevelopment) { // Only fail hard in production
+           return null;
+        }
       }
-    } else if (!isAdminSdkReady) {
-       console.warn('[AuthCheck] Skipping token verification because Admin SDK is not ready.');
-    }
+    } 
     
     // Fallback for development - use a real test user instead of "default-user-id"
     if (isDevelopment) {
-      console.warn('[AuthCheck] Falling back to test user for development.');
+      console.warn('[AuthCheck] Falling back to test user for development (after potential token failure).');
       return await getOrCreateDevUser("nylah@example.com", "Nylah Test");
     }
     
@@ -126,16 +120,32 @@ async function createUserInDb(email: string, name: string): Promise<string> {
 }
 
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  // Get the user ID
-  const userId = await getAuthenticatedUserId(req);
-  
-  if (!userId) {
-    throw createAuthenticationError();
+  let userId;
+  try {
+    console.log('[GET /api/projects] Attempting authentication...');
+    userId = await getAuthenticatedUserId(req);
+    console.log(`[GET /api/projects] Authentication successful. User ID: ${userId}`);
+    
+    if (!userId) {
+      console.warn('[GET /api/projects] Authentication check returned null/undefined user ID.');
+      throw createAuthenticationError();
+    }
+  } catch (authError) {
+    console.error('[GET /api/projects] Authentication failed:', authError);
+    // Re-throw a specific error type if possible, otherwise let withErrorHandling manage it
+    throw authError instanceof ApiError ? authError : createAuthenticationError('Authentication failed');
   }
   
-  // Get projects for this user
-  const projects = await getAllProjects(userId);
-  return NextResponse.json(projects);
+  try {
+    console.log(`[GET /api/projects] Fetching projects for user ID: ${userId}`);
+    const projects = await getAllProjects(userId);
+    console.log(`[GET /api/projects] Successfully fetched ${projects.length} projects for user ID: ${userId}`);
+    return NextResponse.json(projects);
+  } catch (dbError) {
+    console.error(`[GET /api/projects] Database error fetching projects for user ID: ${userId}:`, dbError);
+    // Throw a generic internal server error, letting withErrorHandling format the response
+    throw new ApiError('Failed to retrieve projects from database', ApiErrorType.INTERNAL_SERVER_ERROR);
+  }
 });
 
 export const POST = withErrorHandling(async (req: NextRequest) => {

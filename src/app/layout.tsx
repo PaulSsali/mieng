@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "eMate - Simplify Your ECSA Registration Journey",
-  description: "AI-powered tools for engineers - project tracking, report drafting, and CPD management",
+  title: "Ed60 - AI-Powered Engineering Reporting",
+  description: "Ed60: Streamline engineering reporting with AI. Project tracking, report drafting, and CPD management for professionals.",
 };
 
 export default function RootLayout({

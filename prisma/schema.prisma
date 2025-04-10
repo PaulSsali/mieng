@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,6 +22,12 @@ model User {
   role              Role      @default(ENGINEER)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  // Paystack Subscription Fields
+  paystackCustomerId  String?   @unique // Store Paystack's customer ID
+  subscriptionStatus  SubscriptionStatus @default(INACTIVE)
+  subscriptionEndDate DateTime? // Date when the current subscription expires
+
   reports           Report[]
   reportFeedback    ReportFeedback[]
   organizations     Organization[]
@@ -33,6 +39,13 @@ enum Role {
   ADMIN
   MANAGER
   ENGINEER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PENDING // Optional: For initial state before first payment confirmation
 }
 
 // Organization model

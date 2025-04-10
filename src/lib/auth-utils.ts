@@ -1,4 +1,5 @@
 import { User } from 'firebase/auth';
+import { redirect } from 'next/navigation';
 
 // Import MockUser type from auth-context or define it here
 interface MockUser {
@@ -45,18 +46,53 @@ export async function authenticatedFetch(
   options: RequestInit = {},
   user: AuthUser
 ): Promise<Response | null> {
-  const headers = await getAuthHeaders(user);
-  
-  if (!headers) {
-    console.error('No auth headers available');
+  try {
+    if (!user) {
+      console.error('No user provided for authenticatedFetch');
+      return null;
+    }
+    
+    const headers = await getAuthHeaders(user);
+    
+    if (!headers) {
+      console.error('No auth headers available');
+      return null;
+    }
+    
+    // For local development mode, add additional user identification in headers
+    if (process.env.NODE_ENV === 'development' && 
+        process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH === 'true' && 
+        user && user.uid) {
+      // Add user ID in a custom header for local dev mode
+      (headers as any)['x-user-id'] = user.uid; 
+    }
+    
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        ...headers,
+      },
+    });
+    
+    // Handle auth-related errors
+    if (response.status === 401) {
+      console.error('Unauthorized request - token may be invalid or expired');
+      
+      // If we're in the browser environment, we can redirect
+      if (typeof window !== 'undefined') {
+        // Force redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 100);
+      }
+      
+      return response;
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`API request error for ${url}:`, error);
     return null;
   }
-  
-  return fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      ...headers,
-    },
-  });
 } 

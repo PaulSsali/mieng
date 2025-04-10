@@ -129,17 +129,39 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="py-4 bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <Image 
+              src="/logo.svg" 
+              alt="Ed60 Logo" 
+              width={100} 
+              height={100}
+              className="rounded-sm"
+            />
+          </Link>
+          
+          <Link 
+            href="/signup" 
+            className="bg-primary text-white px-5 py-2 rounded-full hover:bg-primary-dark transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 hover:translate-y-[-2px]"
+          >
+            Sign Up
+          </Link>
+        </div>
+      </header>
+
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md">
           <div className="mb-8 flex flex-col items-center">
-            <Link href="/" className="flex items-center gap-2 mb-6">
+            <Link href="/" className="mb-6">
               <Image 
-                src="/award-icon.svg" 
-                alt="eMate Logo" 
-                width={36} 
-                height={36}
+                src="/logo.svg" 
+                alt="Ed60 Logo" 
+                width={120} 
+                height={120}
+                className="rounded-sm"
               />
-              <span className="font-bold text-3xl">eMate</span>
             </Link>
             <h1 className="text-2xl font-bold">Log in to your account</h1>
             <p className="text-gray-600 mt-2">Welcome back! Please enter your details.</p>

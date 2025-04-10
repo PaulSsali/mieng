@@ -1,5 +1,6 @@
 import { Project } from './db/project-service';
 import { ProjectFormData as FormData } from '@/components/projects/ProjectForm';
+import { authenticatedFetch } from './auth-utils';
 
 export type ProjectFormData = FormData;
 
@@ -8,20 +9,14 @@ export async function createNewProject(projectData: ProjectFormData): Promise<Pr
   try {
     // Get the current Firebase user
     const auth = (await import('./firebase')).auth;
-    const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+    const currentUser = auth?.currentUser;
     
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Add the token if available
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (!currentUser) {
+      throw new Error('You must be logged in to create a project');
     }
     
-    const response = await fetch('/api/projects', {
+    const response = await authenticatedFetch('/api/projects', {
       method: 'POST',
-      headers,
       body: JSON.stringify({
         // Map all form data to the expected API format
         name: projectData.name,
@@ -38,7 +33,11 @@ export async function createNewProject(projectData: ProjectFormData): Promise<Pr
         outcomes: projectData.outcomes,
         outcomeResponses: projectData.outcomeResponses
       }),
-    });
+    }, currentUser);
+
+    if (!response) {
+      throw new Error('Authentication failed. Please log in again.');
+    }
 
     if (response.status === 401) {
       throw new Error('Unauthorized. Please log in again.');
@@ -58,6 +57,14 @@ export async function createNewProject(projectData: ProjectFormData): Promise<Pr
 
 export async function updateExistingProject(id: string, projectData: Partial<ProjectFormData>): Promise<Project | null> {
   try {
+    // Get the current Firebase user
+    const auth = (await import('./firebase')).auth;
+    const currentUser = auth?.currentUser;
+    
+    if (!currentUser) {
+      throw new Error('You must be logged in to update a project');
+    }
+    
     // Create payload with all available fields
     const formattedData = {
       name: projectData.name,
@@ -75,13 +82,14 @@ export async function updateExistingProject(id: string, projectData: Partial<Pro
       outcomeResponses: projectData.outcomeResponses
     };
 
-    const response = await fetch(`/api/projects/${id}`, {
+    const response = await authenticatedFetch(`/api/projects/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(formattedData),
-    });
+    }, currentUser);
+
+    if (!response) {
+      throw new Error('Authentication failed. Please log in again.');
+    }
 
     if (response.status === 401) {
       throw new Error('Unauthorized. Please log in again.');
@@ -101,23 +109,46 @@ export async function updateExistingProject(id: string, projectData: Partial<Pro
 
 export async function deleteExistingProject(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/projects/${id}`, {
+    // Get the current Firebase user
+    const auth = (await import('./firebase')).auth;
+    const currentUser = auth?.currentUser;
+    
+    if (!currentUser) {
+      throw new Error('You must be logged in to delete a project');
+    }
+    
+    const response = await authenticatedFetch(`/api/projects/${id}`, {
       method: 'DELETE',
-    });
+    }, currentUser);
 
-    if (response.status === 401) {
-      throw new Error('Unauthorized. Please log in again.');
+    if (!response) {
+      // Handle case where fetch itself failed or returned null (e.g., network error before response)
+      throw new Error('Authentication or network request failed.');
     }
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete project');
+      let errorMessage = 'Failed to delete project';
+      try {
+        // Try to get more specific error from API response
+        const errorData = await response.json();
+        errorMessage = errorData?.error || errorMessage;
+      } catch (parseError) {
+        // Ignore if response body isn't valid JSON
+        console.warn('Could not parse error response JSON from API during delete.');
+      }
+      // Throw a new error with the potentially more specific message
+      throw new Error(errorMessage);
     }
 
     return true;
   } catch (error) {
-    console.error(`Error deleting project ${id}:`, error);
-    throw error;
+    // Log the error for debugging, ensuring it's an Error object
+    const errorToLog = error instanceof Error ? error : new Error(String(error));
+    console.error(`Error deleting project ${id}:`, errorToLog);
+    
+    // Re-throw the error so the calling component (ProjectCard) can catch it
+    // Ensure we throw an actual Error object with a message
+    throw new Error(errorToLog.message || 'An unexpected error occurred during deletion.');
   }
 }
 

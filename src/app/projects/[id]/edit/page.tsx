@@ -9,9 +9,12 @@ import { useEffect, useState } from "react";
 import { updateExistingProject } from "@/lib/project-service";
 import { toast } from "react-hot-toast";
 import { Project } from "@/lib/db/project-service";
+import { authenticatedFetch } from "@/lib/auth-utils";
 
 interface EditProjectPageProps {
-  params: Promise<{ id: string }>;
+  params: {
+    id: string;
+  };
 }
 
 export default function EditProjectPage({ params }: EditProjectPageProps) {
@@ -21,63 +24,45 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState<string | null>(null);
-
-  // Extract the project ID from params
-  useEffect(() => {
-    async function getParamId() {
-      try {
-        const { id } = await params;
-        setProjectId(id);
-      } catch (error) {
-        console.error('Error getting project ID from params:', error);
-        setError('Invalid project ID');
-      }
-    }
-    getParamId();
-  }, [params]);
+  
+  // The ID is now directly available from params
+  const projectId = params.id;
 
   // Fetch the project data
   useEffect(() => {
     async function fetchProject() {
-      if (!projectId) return;
+      if (!user) return;
       
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/projects/${projectId}`);
+        const response = await authenticatedFetch(`/api/projects/${projectId}`, {
+          method: 'GET',
+        }, user);
         
-        if (response.status === 401) {
-          router.push('/login');
-          return;
+        if (!response) {
+          throw new Error('Failed to fetch project - no response received');
         }
         
         if (!response.ok) {
-          throw new Error('Failed to fetch project');
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Failed to fetch project');
         }
         
-        const data = await response.json();
-        setProject(data);
-      } catch (err) {
-        console.error('Error fetching project:', err);
-        setError('Failed to load project. Please try again.');
+        const projectData = await response.json();
+        setProject(projectData);
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load project');
       } finally {
         setIsLoading(false);
       }
     }
-
-    if (user && projectId) {
+    
+    if (user && !loading) {
       fetchProject();
     }
-  }, [projectId, user, router]);
-
-  // Check if user is authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      // Redirect to login if not authenticated
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
+  }, [user, loading, projectId]);
+  
   const handleSubmit = async (data: ProjectFormData) => {
     if (!user || !projectId) {
       toast.error('You must be logged in to update a project');
@@ -143,28 +128,17 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
     return <div className="p-4 bg-yellow-50 text-yellow-600 rounded-md">Project not found</div>;
   }
 
-  // If not authenticated, the useEffect will redirect
-  if (!user) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Edit Project</h1>
       <MainHeader />
-      <main className="flex-1">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Edit Project</h1>
-          </div>
-          
-          <ProjectFormMultiStep
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            initialData={mapProjectToFormData(project)}
-          />
-        </div>
-      </main>
+      
+      <ProjectFormMultiStep
+        initialData={mapProjectToFormData(project)}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 } 

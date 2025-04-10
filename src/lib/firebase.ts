@@ -18,7 +18,11 @@ if (isDevelopment) {
   console.log('- isLocalAuthMode:', isLocalAuthMode);
   console.log('Checking client-side Firebase config variables:');
   console.log('- NEXT_PUBLIC_FIREBASE_API_KEY:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? `(set, length: ${process.env.NEXT_PUBLIC_FIREBASE_API_KEY.length})` : '(not set)');
+  console.log('- NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:', process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? `(set, value: ${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN})` : '(not set)');
   console.log('- NEXT_PUBLIC_FIREBASE_PROJECT_ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? `(set, value: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID})` : '(not set)');
+  console.log('- NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:', process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ? `(set, value: ${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET})` : '(not set)');
+  console.log('- NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:', process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ? `(set, length: ${process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID.length})` : '(not set)');
+  console.log('- NEXT_PUBLIC_FIREBASE_APP_ID:', process.env.NEXT_PUBLIC_FIREBASE_APP_ID ? `(set, length: ${process.env.NEXT_PUBLIC_FIREBASE_APP_ID.length})` : '(not set)');
 }
 
 // More robust validation for Firebase configuration
@@ -61,6 +65,21 @@ let analytics: Analytics | null = null;
 // Check if we should try to initialize Firebase
 const shouldInitFirebase = (firebaseConfig && (isBrowser || !isDevelopment)) || (isDevelopment && isLocalAuthMode);
 
+// Log the configuration and initialization decision
+if (isDevelopment) {
+  console.log('[Debug] Firebase configuration:', firebaseConfig ? 'Valid configuration object' : 'No valid configuration');
+  console.log('[Debug] Should initialize Firebase?', shouldInitFirebase);
+  if (firebaseConfig) {
+    console.log('[Debug] Firebase config details:');
+    console.log('  - apiKey:', firebaseConfig.apiKey ? '✓ Set' : '✗ Not set');
+    console.log('  - authDomain:', firebaseConfig.authDomain ? '✓ Set' : '✗ Not set');
+    console.log('  - projectId:', firebaseConfig.projectId ? '✓ Set' : '✗ Not set');
+    console.log('  - storageBucket:', firebaseConfig.storageBucket ? '✓ Set' : '✗ Not set');
+    console.log('  - messagingSenderId:', firebaseConfig.messagingSenderId ? '✓ Set' : '✗ Not set');
+    console.log('  - appId:', firebaseConfig.appId ? '✓ Set' : '✗ Not set');
+  }
+}
+
 // Only initialize Firebase if we have valid config or local auth is enabled
 if (shouldInitFirebase) {
   try {
@@ -78,15 +97,20 @@ if (shouldInitFirebase) {
     
     // Initialize Firebase - only if not already initialized and we have a config
     if (configToUse && !getApps().length) {
+      console.log('[Debug] Initializing Firebase with config:', configToUse ? 'Valid configuration' : 'Invalid configuration');
       app = initializeApp(configToUse);
+      console.log('[Debug] Firebase app initialized successfully');
     } else if (getApps().length) {
+      console.log('[Debug] Firebase already initialized, getting existing app');
       app = getApp();
     }
 
     // Initialize Auth - with more defensive coding
     if (app) {
       try {
+        console.log('[Debug] Initializing Firebase Auth');
         auth = getAuth(app);
+        console.log('[Debug] Firebase Auth initialized successfully');
         
         // In development, we can use local emulators if needed
         if (isDevelopment && isBrowser) {

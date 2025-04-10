@@ -12,6 +12,7 @@ import { useEffect, useState } from "react"
 import { Project } from "@/lib/db/project-service"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import { authenticatedFetch } from "@/lib/auth-utils"
 
 interface ProjectsListProps {
   viewMode: "grid" | "list"
@@ -42,27 +43,20 @@ export function ProjectsList({
     }
     
     const fetchProjects = async () => {
+      if (!user) return; // Don't fetch if no user
+      
       try {
         setLoading(true);
         
-        // Get the authentication token if available
-        let token = null;
-        if (user && 'getIdToken' in user) {
-          token = await user.getIdToken();
+        // Use authenticatedFetch utility
+        const response = await authenticatedFetch('/api/projects', {
+          method: 'GET'
+        }, user);
+        
+        // Check if response is null (could happen if auth fails)
+        if (!response) {
+          throw new Error('Authentication failed. Please log in again.');
         }
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        
-        // Add the token if available
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch('/api/projects', {
-          headers
-        });
         
         if (response.status === 401) {
           // Unauthorized, redirect to login
@@ -71,21 +65,32 @@ export function ProjectsList({
         }
         
         if (!response.ok) {
-          throw new Error('Failed to fetch projects');
+          // Try to get more details from the response body
+          let errorDetails = `Status: ${response.status} ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            errorDetails += ` - ${errorData.error || JSON.stringify(errorData)}`;
+          } catch (jsonError) {
+            // If response body is not JSON or empty
+            errorDetails += ' - No details in response body';
+          }
+          console.error('API Error Response:', errorDetails); // Log the detailed error
+          throw new Error(`Failed to fetch projects. ${errorDetails}`); // Include details in thrown error
         }
         
         const data = await response.json();
         setProjects(data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching projects:', err);
-        setError('Failed to load projects. Please try again later.');
+        console.error('Error fetching projects (catch block):', err); // Log the caught error
+        setError(err instanceof Error ? err.message : 'Failed to load projects. Please try again later.');
         setProjects([]);
       } finally {
         setLoading(false);
       }
     };
     
+    // Fetch projects when user is available or refreshTrigger changes
     if (user) {
       fetchProjects();
     }

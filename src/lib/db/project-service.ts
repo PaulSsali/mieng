@@ -1,4 +1,5 @@
 import prisma from './client';
+import { Prisma } from '@prisma/client';
 
 // Define types for our UI
 export type ProjectStatus = 'In Progress' | 'Completed' | 'Pending Review' | 'Planning' | 'On Hold';
@@ -361,27 +362,38 @@ export async function updateProject(id: string, projectData: Partial<Project>, u
 }
 
 export async function deleteProject(id: string, userId?: string): Promise<boolean> {
+  console.log(`[DB deleteProject] Attempting to delete project ID: ${id} for user ID: ${userId}`);
   try {
-    // First check if the project exists and belongs to the user
+    // First check if the project exists and belongs to the user, *if* userId is provided
     if (userId) {
+      console.log(`[DB deleteProject] Verifying ownership for project ${id} and user ${userId}...`);
       const existingProject = await prisma.project.findFirst({
         where: { id, userId },
+        select: { id: true } // Only select ID for efficiency
       });
       
       if (!existingProject) {
-        console.error(`Project ${id} not found or does not belong to user ${userId}`);
-        return false;
+        console.error(`[DB deleteProject] Verification failed: Project ${id} not found or does not belong to user ${userId}`);
+        return false; // Explicitly return false if verification fails
       }
+      console.log(`[DB deleteProject] Ownership verified for project ${id} and user ${userId}.`);
     }
     
+    console.log(`[DB deleteProject] Executing prisma.project.delete for ID: ${id}`);
     // Delete the project (will also delete related milestones and outcomes due to Cascade)
     await prisma.project.delete({
       where: { id },
     });
+    console.log(`[DB deleteProject] Successfully deleted project ID: ${id}`);
     
     return true;
   } catch (error) {
-    console.error(`Error deleting project ${id}:`, error);
-    return false;
+    console.error(`[DB deleteProject] Error during prisma.project.delete for ID ${id}:`, error);
+    // Check for specific Prisma errors, like P2025 (Record to delete does not exist)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      console.error(`[DB deleteProject] Prisma error P2025: Record with ID ${id} not found for deletion.`);
+      // This shouldn't happen if the check above passed, but good to handle.
+    }
+    return false; // Return false on any error during deletion
   }
 } 

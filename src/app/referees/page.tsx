@@ -192,6 +192,7 @@ export default function RefereesPage() {
         });
       } else {
         // Add new referee
+        console.log("[handleSaveReferee] Creating new referee with values:", values);
         const created = await createReferee({
           name: values.firstName + ' ' + values.lastName,
           title: values.position || values.title,

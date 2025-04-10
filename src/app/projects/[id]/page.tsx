@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Briefcase, User, Edit, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { authenticatedFetch } from "@/lib/auth-utils";
 
 interface ProjectDetailPageProps {
   params: Promise<{ id: string }>;
@@ -42,11 +43,19 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   // Fetch the project data
   useEffect(() => {
     async function fetchProject() {
-      if (!projectId) return;
+      if (!projectId || !user) return;
       
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/projects/${projectId}`);
+        
+        // Use authenticatedFetch to include the auth token
+        const response = await authenticatedFetch(`/api/projects/${projectId}`, {
+          method: 'GET'
+        }, user);
+        
+        if (!response) {
+          throw new Error('Authentication failed. Please log in again.');
+        }
         
         if (response.status === 401) {
           router.push('/login');
@@ -54,6 +63,14 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         }
         
         if (!response.ok) {
+          // Check for specific 404 error
+          if (response.status === 404) {
+            setError('Project not found or you do not have permission to view it.');
+            // Optionally, redirect after a delay
+            // setTimeout(() => router.push('/projects'), 1500);
+            return; // Stop execution here if not found
+          }
+          // Generic error for other failures
           throw new Error('Failed to fetch project');
         }
         
@@ -61,7 +78,8 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         setProject(data);
       } catch (err) {
         console.error('Error fetching project:', err);
-        setError('Failed to load project. Please try again.');
+        // Display the specific error message if available
+        setError(err instanceof Error ? err.message : 'Failed to load project. Please try again.');
       } finally {
         setIsLoading(false);
       }

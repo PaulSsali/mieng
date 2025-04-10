@@ -20,25 +20,23 @@ import {
   ExternalLink,
   ChevronRight,
   Lightbulb,
+  Filter,
+  ArrowUp,
+  ListFilter,
 } from "lucide-react"
 import { outcomeData } from "@/lib/outcome-data"
 import { OutcomeCard } from "@/components/outcome-card"
 import { OutcomeDetailView } from "@/components/outcome-detail-view"
 import { ReportExampleCard } from "@/components/report-example-card"
 import { DashboardLayout } from "@/components/DashboardLayout"
+import { Badge } from "@/components/ui/badge"
 
 export default function OutcomesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedOutcome, setSelectedOutcome] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState("overview")
-
-  // Filter outcomes based on search query
-  const filteredOutcomes = outcomeData.filter(
-    (outcome) =>
-      outcome.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      outcome.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      outcome.keywords.some((keyword) => keyword.toLowerCase().includes(searchQuery.toLowerCase())),
-  )
+  const [showCompletedOnly, setShowCompletedOnly] = useState(false)
+  const [showIncompleteOnly, setShowIncompleteOnly] = useState(false)
 
   // Calculate user's progress
   const userProgress = {
@@ -60,12 +58,35 @@ export default function OutcomesPage() {
     ],
   }
 
+  // Filter outcomes based on search query and completion status
+  const filteredOutcomes = outcomeData.filter(
+    (outcome) => {
+      const matchesSearch = 
+        outcome.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        outcome.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        outcome.keywords.some((keyword) => keyword.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesCompletionFilter = 
+        (showCompletedOnly && userProgress.outcomeStatus.find(o => o.id === outcome.id)?.status === "complete") ||
+        (showIncompleteOnly && userProgress.outcomeStatus.find(o => o.id === outcome.id)?.status !== "complete") ||
+        (!showCompletedOnly && !showIncompleteOnly);
+      
+      return matchesSearch && matchesCompletionFilter;
+    }
+  )
+
+  const clearFilters = () => {
+    setShowCompletedOnly(false);
+    setShowIncompleteOnly(false);
+  }
+
   return (
     <DashboardLayout>
       <main className="py-8">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex flex-col gap-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col gap-6">
+            {/* Page header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg">
               <div>
                 <h1 className="text-3xl font-bold">ECSA Outcomes</h1>
                 <p className="text-muted-foreground mt-1">
@@ -82,126 +103,140 @@ export default function OutcomesPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Your Progress</CardTitle>
-                  <CardDescription>Tracking your ECSA outcomes coverage</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">
-                      {userProgress.completedOutcomes}/{userProgress.totalOutcomes} Outcomes
-                    </span>
-                    <span className="text-sm font-medium">{userProgress.percentComplete}%</span>
-                  </div>
-                  <Progress value={userProgress.percentComplete} className="h-2" />
-
-                  <div className="grid grid-cols-11 gap-1 mt-4">
-                    {userProgress.outcomeStatus.map((outcome) => (
-                      <div
-                        key={outcome.id}
-                        className={`h-8 w-full flex items-center justify-center rounded-md text-xs font-medium ${
-                          outcome.status === "complete"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-gray-200 text-gray-500"
-                        }`}
-                      >
-                        {outcome.id}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full" onClick={() => setActiveTab("recommendations")}>
-                    <Lightbulb className="mr-2 h-4 w-4" />
-                    Get Recommendations
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle>ECSA Registration Requirements</CardTitle>
-                  <CardDescription>Key information about professional registration</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm">
-                      The Engineering Council of South Africa (ECSA) requires candidates to demonstrate competence
-                      across 11 outcomes for professional registration. These outcomes ensure that registered engineers
-                      have the necessary skills and knowledge to practice safely and effectively.
-                    </p>
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-full bg-primary/10 p-2">
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Minimum Experience Requirements</p>
-                        <p className="text-sm text-muted-foreground">
-                          At least 3 years of relevant post-qualification experience
-                        </p>
-                      </div>
+            {/* Progress summary card */}
+            <Card className="overflow-hidden border-none shadow-md">
+              <div className="bg-primary text-primary-foreground p-4">
+                <h2 className="text-xl font-semibold">Your Progress</h2>
+                <p className="text-primary-foreground/80 text-sm">Complete all 11 outcomes to qualify for ECSA registration</p>
+              </div>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Progress bar */}
+                  <div className="md:col-span-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">
+                        {userProgress.completedOutcomes} of {userProgress.totalOutcomes} Outcomes Complete
+                      </span>
+                      <Badge variant={userProgress.percentComplete === 100 ? "secondary" : "outline"}>
+                        {userProgress.percentComplete}% Complete
+                      </Badge>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-full bg-primary/10 p-2">
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Training and Experience Reports (TERs)</p>
-                        <p className="text-sm text-muted-foreground">
-                          Detailed documentation of your engineering experience
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-full bg-primary/10 p-2">
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Engineering Report</p>
-                        <p className="text-sm text-muted-foreground">
-                          Comprehensive report demonstrating your competence across all 11 outcomes
-                        </p>
-                      </div>
+                    <Progress value={userProgress.percentComplete} className="h-3" />
+                    
+                    <div className="grid grid-cols-11 gap-1 mt-6">
+                      {userProgress.outcomeStatus.map((outcome) => (
+                        <button
+                          key={outcome.id}
+                          onClick={() => {
+                            setSelectedOutcome(outcome.id);
+                            setActiveTab("detail");
+                          }}
+                          className={`h-10 w-full flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:opacity-90 ${
+                            outcome.status === "complete"
+                              ? "bg-green-500 text-white"
+                              : "bg-amber-200 text-amber-800"
+                          }`}
+                        >
+                          {outcome.id}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                </CardContent>
-                <CardFooter>
-                  <Link
-                    href="https://www.ecsa.co.za/register/SitePages/Professional.aspx"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button variant="outline">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      ECSA Official Requirements
+                  
+                  {/* Action buttons */}
+                  <div className="space-y-3 flex flex-col">
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab("recommendations")}>
+                      <Lightbulb className="mr-2 h-4 w-4" />
+                      Get Recommendations
                     </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setShowIncompleteOnly(!showIncompleteOnly)}>
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      {showIncompleteOnly ? "Show All Outcomes" : "Show Incomplete Outcomes"}
+                    </Button>
+                    <Link href="/outcomes/tracking" className="w-full">
+                      <Button variant="outline" className="w-full justify-start">
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Update Progress
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Search and filter bar */}
+            <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  type="search"
+                  placeholder="Search outcomes by keyword or description..."
+                  className="pl-8 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <Button 
+                  variant={showCompletedOnly ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => {
+                    setShowCompletedOnly(!showCompletedOnly);
+                    setShowIncompleteOnly(false);
+                  }}
+                  className="flex-1 md:flex-none"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Completed
+                </Button>
+                <Button 
+                  variant={showIncompleteOnly ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => {
+                    setShowIncompleteOnly(!showIncompleteOnly);
+                    setShowCompletedOnly(false);
+                  }}
+                  className="flex-1 md:flex-none"
+                >
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Incomplete
+                </Button>
+                {(showCompletedOnly || showIncompleteOnly) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearFilters}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="search"
-                placeholder="Search outcomes by keyword or description..."
-                className="pl-8 w-full md:w-96"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            {filteredOutcomes.length === 0 && (
+              <div className="py-8 text-center bg-gray-50 rounded-lg">
+                <AlertCircle className="mx-auto h-10 w-10 text-gray-400 mb-2" />
+                <h3 className="text-lg font-medium">No outcomes found</h3>
+                <p className="text-muted-foreground">Try adjusting your search or filters</p>
+                <Button variant="outline" className="mt-4" onClick={() => {
+                  setSearchQuery("");
+                  clearFilters();
+                }}>
+                  Reset search and filters
+                </Button>
+              </div>
+            )}
 
+            {/* Tabs content */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 md:w-auto">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="detail">Detailed Information</TabsTrigger>
+                <TabsTrigger value="detail">Details</TabsTrigger>
                 <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredOutcomes.map((outcome) => (
                     <OutcomeCard
                       key={outcome.id}
@@ -223,17 +258,16 @@ export default function OutcomesPage() {
                     onBack={() => setSelectedOutcome(null)}
                   />
                 ) : (
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     <div className="prose max-w-none">
-                      <h2>ECSA Outcomes Detailed Information</h2>
-                      <p className="text-muted-foreground">
-                        This section provides comprehensive information about all ECSA outcomes. 
-                        Select an outcome to view its complete details.
+                      <h2 className="text-2xl font-bold mb-2">ECSA Outcomes Detailed Information</h2>
+                      <p className="text-muted-foreground mb-6">
+                        Select an outcome to view its complete details, including demonstration guidelines and resources.
                       </p>
                     </div>
                     
                     {filteredOutcomes.map((outcome) => (
-                      <Card key={outcome.id} className="overflow-hidden">
+                      <Card key={outcome.id} className="overflow-hidden hover:shadow-md transition-shadow">
                         <CardHeader className={`${
                           userProgress.outcomeStatus.find((o) => o.id === outcome.id)?.status === "complete"
                             ? "bg-green-50 border-b border-green-100"
@@ -267,19 +301,19 @@ export default function OutcomesPage() {
 
               <TabsContent value="recommendations" className="mt-6">
                 <div className="grid gap-6 md:grid-cols-2">
-                  <Card>
-                    <CardHeader>
+                  <Card className="border-amber-200 shadow-sm">
+                    <CardHeader className="bg-amber-50">
                       <CardTitle>Incomplete Outcomes</CardTitle>
                       <CardDescription>Focus on these outcomes to complete your portfolio</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 p-5">
                       {outcomeData
                         .filter((outcome) => 
                           userProgress.outcomeStatus.find((o) => o.id === outcome.id)?.status !== "complete"
                         )
                         .map((outcome) => (
                           <div key={outcome.id} className="flex items-start gap-3 pb-4 border-b last:border-0">
-                            <div className="bg-amber-100 text-amber-600 h-7 w-7 rounded-full flex items-center justify-center font-medium text-sm">
+                            <div className="bg-amber-100 text-amber-600 h-7 w-7 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
                               {outcome.id}
                             </div>
                             <div>
@@ -299,14 +333,14 @@ export default function OutcomesPage() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
+                  <Card className="border-primary/20 shadow-sm">
+                    <CardHeader className="bg-primary/5">
                       <CardTitle>Recommended Project Types</CardTitle>
                       <CardDescription>Projects that can help demonstrate missing outcomes</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 p-5">
                       <div className="flex items-start gap-3 pb-4 border-b">
-                        <div className="rounded-full bg-primary/10 p-2">
+                        <div className="rounded-full bg-primary/10 p-2 flex-shrink-0">
                           <BookOpen className="h-5 w-5 text-primary" />
                         </div>
                         <div>
@@ -314,10 +348,16 @@ export default function OutcomesPage() {
                           <p className="text-sm text-muted-foreground">
                             Participate in courses or workshops related to engineering professionalism and ethics to cover Outcome 10.
                           </p>
+                          <Button variant="link" size="sm" className="mt-1 px-0" onClick={() => {
+                            setSelectedOutcome(10)
+                            setActiveTab("detail")
+                          }}>
+                            View Outcome 10 →
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 pb-4 border-b">
-                        <div className="rounded-full bg-primary/10 p-2">
+                        <div className="rounded-full bg-primary/10 p-2 flex-shrink-0">
                           <BookOpen className="h-5 w-5 text-primary" />
                         </div>
                         <div>
@@ -325,10 +365,16 @@ export default function OutcomesPage() {
                           <p className="text-sm text-muted-foreground">
                             Seek opportunities to manage project components, budgets, schedules, or teams to address Outcome 11.
                           </p>
+                          <Button variant="link" size="sm" className="mt-1 px-0" onClick={() => {
+                            setSelectedOutcome(11)
+                            setActiveTab("detail")
+                          }}>
+                            View Outcome 11 →
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-primary/10 p-2">
+                        <div className="rounded-full bg-primary/10 p-2 flex-shrink-0">
                           <BookOpen className="h-5 w-5 text-primary" />
                         </div>
                         <div>
@@ -347,12 +393,12 @@ export default function OutcomesPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="md:col-span-2">
-                    <CardHeader>
+                  <Card className="md:col-span-2 shadow-sm">
+                    <CardHeader className="bg-gray-50">
                       <CardTitle>Report Examples</CardTitle>
                       <CardDescription>Sample reports demonstrating effective outcome coverage</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                         <ReportExampleCard 
                           title="Engineering Ethics Case Study"
@@ -374,6 +420,11 @@ export default function OutcomesPage() {
                         />
                       </div>
                     </CardContent>
+                    <CardFooter className="bg-gray-50 border-t">
+                      <Button variant="outline" className="w-full">
+                        View All Example Reports
+                      </Button>
+                    </CardFooter>
                   </Card>
                 </div>
               </TabsContent>

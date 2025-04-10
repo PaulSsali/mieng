@@ -3,7 +3,7 @@
 ## Dashboard Image
 The dashboard image you shared in chat needs to be saved to:
 ```
-mieng/public/dashboard-image.png
+public/dashboard-image.png
 ```
 
 Please save the image you shared to this location for it to appear in the hero section of the landing page.

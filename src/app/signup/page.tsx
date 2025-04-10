@@ -192,21 +192,20 @@ export default function Signup() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <header className="py-4 bg-white border-b">
-        <div className="max-w-2xl mx-auto px-4 md:px-6 flex justify-between items-center">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
             <Image 
-              src="/award-icon.svg" 
-              alt="eMate Logo" 
-              width={24} 
-              height={24}
-              className="text-primary" 
+              src="/logo.svg" 
+              alt="Ed60 Logo" 
+              width={100} 
+              height={100}
+              className="rounded-sm" 
             />
-            <span className="font-bold text-xl">eMate</span>
           </Link>
           
           <Link 
             href="/login" 
-            className="text-gray-700 hover:text-primary transition-colors duration-300"
+            className="text-gray-700 hover:text-primary transition-all duration-300 px-4 py-2 hover:scale-105"
           >
             Log in
           </Link>

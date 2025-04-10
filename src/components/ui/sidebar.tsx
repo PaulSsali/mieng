@@ -17,7 +17,8 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  User
+  User,
+  Sparkles
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -47,7 +48,7 @@ export function Sidebar({ className, isCollapsed, onCollapse, onMenuItemClick }:
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Outcomes", href: "/outcomes", icon: Target },
     { label: "Projects", href: "/projects", icon: FolderOpen },
-    { label: "Reports", href: "/reports", icon: FileText },
+    { label: "Reports", href: "/reports", icon: Sparkles },
     { label: "Referees", href: "/referees", icon: Users },
   ]
 
@@ -95,16 +96,14 @@ export function Sidebar({ className, isCollapsed, onCollapse, onMenuItemClick }:
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4 border-b">
         <div className="flex items-center gap-2 overflow-hidden">
-          <Link href="/dashboard" className="flex items-center gap-2" onClick={handleMenuItemClick}>
-            <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-sm flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">e</span>
-            </div>
-            <span className={cn(
-              "font-semibold text-lg transition-all duration-300 origin-left transform-gpu",
-              isCollapsed ? "opacity-0 scale-x-0 w-0" : "opacity-100 scale-x-100 w-auto"
-            )}>
-              eMate
-            </span>
+          <Link href="/dashboard" className="flex items-center gap-2" onClick={handleMenuItemClick} title="Ed60 Dashboard">
+            <Image 
+              src="/logo.svg" 
+              alt="Ed60 Logo" 
+              width={100} 
+              height={100} 
+              className="rounded-sm"
+            />
           </Link>
         </div>
         <Button
